@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import InstituteHeader from './InstituteHeader'
 import { DAY_KEYS, getAutoHolidayColor } from '../utils/coeUtils'
-
+import { API_URL } from '../config'
 // Groups consecutive week rows that share the same Month so we can render
 // a single vertical "Month" cell spanning all of that month's weeks.
 function groupByMonth(entries) {
@@ -24,7 +24,7 @@ function COEView() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/coe')
+    fetch(`${API_URL}/api/coe`)
       .then((res) => res.json())
       .then(setDocs)
       .catch(() => setDocs([]))
@@ -36,7 +36,7 @@ function COEView() {
       return
     }
     setLoading(true)
-    fetch(`http://localhost:5000/api/coe/${selectedId}`)
+    fetch(`${API_URL}/api/coe/${selectedId}`)
       .then((res) => res.json())
       .then(setDoc)
       .catch(() => setDoc(null))

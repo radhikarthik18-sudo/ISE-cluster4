@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 
 function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
   const [formData, setFormData] = useState({
@@ -54,8 +55,8 @@ function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
 
   const handleSave = async () => {
     const url = isEditMode
-      ? `http://localhost:5000/api/faculty/${existingFaculty._id}`
-      : 'http://localhost:5000/api/faculty'
+      ? `${API_URL}/api/faculty/${existingFaculty._id}`
+      : `${API_URL}/api/faculty`
     const method = isEditMode ? 'PUT' : 'POST'
 
     // In edit mode, don't send an empty Password (backend route ignores it anyway, but cleaner not to send it)
@@ -84,7 +85,7 @@ function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
     const uploadData = new FormData()
     uploadData.append('file', file)
 
-    const res = await fetch('http://localhost:5000/api/faculty/upload', {
+    const res = await fetch(`${API_URL}/api/faculty/upload`, {
       method: 'POST',
       body: uploadData,
     })

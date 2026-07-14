@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 
 function ViewStudents() {
   const [years, setYears] = useState([])
@@ -15,7 +16,7 @@ function ViewStudents() {
 
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/students/years')
+    fetch(`${API_URL}/api/students/years`)
       .then((res) => res.json())
       .then((data) => setYears(data))
   }, [])
@@ -25,13 +26,13 @@ function ViewStudents() {
       setStudents([])
       return
     }
-    fetch(`http://localhost:5000/api/students?Year=${selectedYear}`)
+    fetch(`${API_URL}/api/students?Year=${selectedYear}`)
       .then((res) => res.json())
       .then((data) => setStudents(data))
   }, [selectedYear])
 
   const handleRowClick = async (id) => {
-    const res = await fetch(`http://localhost:5000/api/students/${id}`)
+    const res = await fetch(`${API_URL}/api/students/${id}`)
     const data = await res.json()
     setSelectedStudent(data)
   }

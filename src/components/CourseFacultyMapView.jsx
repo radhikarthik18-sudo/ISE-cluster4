@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 
 function CourseFacultyMapView() {
   const [mappings, setMappings] = useState([])
 
   const fetchMappings = () => {
-    fetch('http://localhost:5000/api/course-faculty-map')
+    fetch(`${API_URL}/api/course-faculty-map`)
       .then((res) => res.json())
       .then((data) => setMappings(data))
   }
@@ -19,7 +20,7 @@ function CourseFacultyMapView() {
     )
     if (!confirmed) return
 
-    const res = await fetch(`http://localhost:5000/api/course-faculty-map/${id}`, {
+    const res = await fetch(`${API_URL}/api/course-faculty-map/${id}`, {
       method: 'DELETE',
     })
     if (res.ok) {

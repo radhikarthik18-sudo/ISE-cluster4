@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config'
 
 function ViewFaculty({ onEditRequest }) {
   const [facultyList, setFacultyList] = useState([])
@@ -6,7 +7,7 @@ function ViewFaculty({ onEditRequest }) {
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/faculty')
+    fetch(`${API_URL}/api/faculty`)
       .then((res) => res.json())
       .then((data) => setFacultyList(data))
   }, [])
@@ -16,7 +17,7 @@ function ViewFaculty({ onEditRequest }) {
     .sort((a, b) => a.Name.localeCompare(b.Name))
 
   const handleRowClick = async (id) => {
-    const res = await fetch(`http://localhost:5000/api/faculty/${id}`)
+    const res = await fetch(`${API_URL}/api/faculty/${id}`)
     const data = await res.json()
     setSelectedFaculty(data)
   }
@@ -24,7 +25,7 @@ function ViewFaculty({ onEditRequest }) {
     const confirmed = window.confirm('Are you sure you want to delete this faculty member?')
     if (!confirmed) return
 
-    const res = await fetch(`http://localhost:5000/api/faculty/${id}`, {
+    const res = await fetch(`${API_URL}/api/faculty/${id}`, {
       method: 'DELETE',
     })
     if (res.ok) {
@@ -42,7 +43,7 @@ function ViewFaculty({ onEditRequest }) {
     const randomDigits = Math.floor(1000 + Math.random() * 9000)
     const newPassword = `${firstName}@${randomDigits}`
 
-    const res = await fetch(`http://localhost:5000/api/faculty/${id}/reset-password`, {
+    const res = await fetch(`${API_URL}/api/faculty/${id}/reset-password`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newPassword }),
@@ -56,7 +57,7 @@ function ViewFaculty({ onEditRequest }) {
   }
 
   const handleEditClick = async (id) => {
-    const res = await fetch(`http://localhost:5000/api/faculty/${id}`)
+    const res = await fetch(`${API_URL}/api/faculty/${id}`)
     const data = await res.json()
     onEditRequest(data)
   }

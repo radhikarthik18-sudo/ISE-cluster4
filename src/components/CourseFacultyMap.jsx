@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import CourseFacultyMapView from './CourseFacultyMapView'
+import { API_URL } from '../config'
 function CourseFacultyMap() {
   const [courses, setCourses] = useState([])
   const [facultyList, setFacultyList] = useState([])
@@ -14,11 +15,11 @@ function CourseFacultyMap() {
   const [showList, setShowList] = useState(false)
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/courses')
+    fetch(`${API_URL}/api/courses`)
       .then((res) => res.json())
       .then((data) => setCourses(data))
 
-    fetch('http://localhost:5000/api/faculty')
+    fetch(`${API_URL}/api/faculty`)
       .then((res) => res.json())
       .then((data) => setFacultyList(data))
   }, [])
@@ -29,7 +30,7 @@ function CourseFacultyMap() {
       setSelectedCourse(null)
       return
     }
-    fetch(`http://localhost:5000/api/courses/${selectedCourseId}`)
+    fetch(`${API_URL}/api/courses/${selectedCourseId}`)
       .then((res) => res.json())
       .then((data) => setSelectedCourse(data))
   }, [selectedCourseId])
@@ -40,7 +41,7 @@ function CourseFacultyMap() {
       setSelectedFaculty(null)
       return
     }
-    fetch(`http://localhost:5000/api/faculty/${selectedFacultyId}`)
+    fetch(`${API_URL}/api/faculty/${selectedFacultyId}`)
       .then((res) => res.json())
       .then((data) => setSelectedFaculty(data))
   }, [selectedFacultyId])
@@ -57,7 +58,7 @@ function CourseFacultyMap() {
       return
     }
 
-    const res = await fetch('http://localhost:5000/api/course-faculty-map', {
+    const res = await fetch(`${API_URL}/api/course-faculty-map`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

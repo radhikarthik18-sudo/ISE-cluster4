@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API_URL } from '../config' 
 
 function StudentAllocation() {
   const [years, setYears] = useState([])
@@ -9,7 +10,7 @@ function StudentAllocation() {
   const [selectedIds, setSelectedIds] = useState([])
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/students/years')
+    fetch(`${API_URL}/api/students/years`)
       .then((res) => res.json())
       .then((data) => setYears(data))
   }, [])
@@ -19,7 +20,7 @@ function StudentAllocation() {
       setStudents([])
       return
     }
-    fetch(`http://localhost:5000/api/students?Year=${selectedYear}`)
+    fetch(`${API_URL}/api/students?Year=${selectedYear}`)
       .then((res) => res.json())
       .then((data) => {
       const sorted = [...data].sort((a, b) => a.USN.localeCompare(b.USN))
@@ -52,7 +53,7 @@ function StudentAllocation() {
       return
     }
 
-    const res = await fetch('http://localhost:5000/api/students/allocate', {
+    const res = await fetch(`${API_URL}/api/students/allocate`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ studentIds: selectedIds, Semester: semester, Section: section }),

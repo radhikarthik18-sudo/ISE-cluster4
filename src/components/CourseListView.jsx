@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-
+import { API_URL } from '../config'
 function CourseListView() {
   const [courses, setCourses] = useState([])
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/courses')
+    fetch(`${API_URL}/api/courses`)
       .then((res) => res.json())
       .then((data) => setCourses(data))
   }, [])
@@ -16,7 +16,7 @@ function CourseListView() {
     .sort((a, b) => a.CourseCode.localeCompare(b.CourseCode))
 
   const handleRowClick = async (id) => {
-    const res = await fetch(`http://localhost:5000/api/courses/${id}`)
+    const res = await fetch(`${API_URL}/api/courses/${id}`)
     const data = await res.json()
     setSelectedCourse(data)
   }

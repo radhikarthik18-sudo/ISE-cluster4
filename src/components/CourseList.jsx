@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import CourseListView from './CourseListView'
-
+import { API_URL } from '../config'
 function CourseList() {
   const [formData, setFormData] = useState({
     CourseCategory: '',
@@ -25,7 +25,7 @@ function CourseList() {
   }
 
   const handleSave = async () => {
-    const res = await fetch('http://localhost:5000/api/courses', {
+    const res = await fetch(`${API_URL}/api/courses`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData),

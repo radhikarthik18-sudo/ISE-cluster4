@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { API_URL } from '../config'
 
 function EntryForm() {
   const [Year, setYear] = useState('')
@@ -32,7 +33,7 @@ function EntryForm() {
   }
 
   const handleManualSave = async () => {
-    const res = await fetch('http://localhost:5000/api/students', {
+    const res = await fetch(`${API_URL}/api/students`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ Year, ...formData }),
@@ -52,7 +53,7 @@ function EntryForm() {
     uploadData.append('file', file)
     uploadData.append('Year', Year)
 
-    const res = await fetch('http://localhost:5000/api/students/upload', {
+    const res = await fetch(`${API_URL}/api/students/upload`, {
       method: 'POST',
       body: uploadData,
     })

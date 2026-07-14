@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DAY_KEYS, EVENT_COLORS, getAutoHolidayColor } from '../utils/coeUtils'
-
+import { API_URL } from '../config'
 const emptyHeader = {
   Title: '',
   Semester: '',
@@ -26,7 +26,7 @@ function COEEntry() {
   const [newEventColor, setNewEventColor] = useState(EVENT_COLORS[0].hex)
 
   const loadDocList = () => {
-    fetch('http://localhost:5000/api/coe')
+    fetch(`${API_URL}/api/coe`)
       .then((res) => res.json())
       .then(setDocs)
       .catch(() => setDocs([]))
@@ -45,7 +45,7 @@ function COEEntry() {
       return
     }
     setLoadingDoc(true)
-    fetch(`http://localhost:5000/api/coe/${selectedId}`)
+    fetch(`${API_URL}/api/coe/${selectedId}`)
       .then((res) => res.json())
       .then((doc) => {
         setHeader({
@@ -164,7 +164,7 @@ function COEEntry() {
 
   const handleSaveDocument = async () => {
     const isUpdate = Boolean(selectedId)
-    const url = isUpdate ? `http://localhost:5000/api/coe/${selectedId}` : 'http://localhost:5000/api/coe'
+    const url = isUpdate ? `${API_URL}/api/coe/${selectedId}` : `${API_URL}/api/coe`
     const method = isUpdate ? 'PUT' : 'POST'
 
     const res = await fetch(url, {
