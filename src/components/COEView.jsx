@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import InstituteHeader from './InstituteHeader'
-import { DAY_KEYS, getAutoHolidayColor, cellToISODate, groupEventsIntoRanges, formatEventLabel } from '../utils/coeUtils'
-import { API_URL } from '../config'  
-// Groups consecutive rows sharing the same Month+Year so the merged
-// "Month" column still works correctly around split weeks.
+import { DAY_KEYS, getAutoHolidayColor, cellToISODate, groupEventsIntoRanges, formatEventLabel, computeWorkingDays } from '../utils/coeUtils'
+import { API_URL } from '../config'
+
 function groupByMonth(entries) {
   const groups = []
   let current = null
@@ -104,7 +103,7 @@ function COEView() {
                 {DAY_KEYS.map((d) => (
                   <th key={d} className="border px-1 py-1">{d}</th>
                 ))}
-                <th className="border px-1 py-1">Working Days</th>
+                <th className="border px-1 py-1 w-10 text-xs">WD</th>
                 <th className="border px-1 py-1 w-72">Events</th>
               </tr>
             </thead>
@@ -112,7 +111,6 @@ function COEView() {
               {monthGroups.map((group, gi) =>
                 group.rows.map((row, ri) => {
                   const rowDates = new Set(DAY_KEYS.map((k) => cellToISODate(row, k)).filter(Boolean))
-                  // Show each event/range once, on the row containing its start date
                   const rowEventGroups = eventGroups.filter((g) => rowDates.has(g.StartDate))
 
                   return (
@@ -143,12 +141,14 @@ function COEView() {
                         )
                       })}
 
-                      <td className="border px-1 py-1 text-center">{row.WorkingDays}</td>
+                      <td className="border px-1 py-1 text-center text-xs w-10">
+                        {computeWorkingDays(row, events)}
+                      </td>
                       <td className="border px-1 py-1">
                         <div className="flex flex-wrap gap-1">
-                          {rowEventGroups.map((g, gi) => (
+                          {rowEventGroups.map((g, ggi) => (
                             <span
-                              key={gi}
+                              key={ggi}
                               style={{ backgroundColor: g.Color }}
                               className="text-white px-2 py-0.5 rounded text-[10px]"
                             >

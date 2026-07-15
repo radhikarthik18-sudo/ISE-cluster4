@@ -7,10 +7,12 @@ import {
   getAutoHolidayColor,
   cellToISODate,
   datesInRange,
+  computeWorkingDays,
   groupEventsIntoRanges,
   formatEventLabel,
 } from '../utils/coeUtils'
-import { API_URL } from '../config'  
+import { API_URL } from '../config'
+
 const emptyHeader = {
   Title: '',
   Semester: '',
@@ -23,9 +25,11 @@ const emptyHeader = {
   Signatories: ['COE-Coordinator', 'Controller of Examinations', 'Dean Academics', 'Principal'],
 }
 
-// Builds one grid row limited to a single month's days within a 7-day
-// Sun-Sat window (other days blank). Used to split weeks that cross a
-// month boundary into two rows sharing the same Week label.
+function buildAutoTitle(h) {
+  if (!h.Semester || !h.AcademicYear || !h.Term) return ''
+  return `Tentative Calendar of Events (CoE) of B.E. ${h.Semester} Semester ${h.AcademicYear} (${h.Term})`
+}
+
 function buildWeekRow(weekDates, weekLabel, monthIndex) {
   const sampleDate = weekDates.find((d) => d.getMonth() === monthIndex)
   const dayVals = weekDates.map((d) => (d.getMonth() === monthIndex ? d.getDate() : ''))
@@ -40,7 +44,6 @@ function buildWeekRow(weekDates, weekLabel, monthIndex) {
     Thu: dayVals[4],
     Fri: dayVals[5],
     Sat: dayVals[6],
-    WorkingDays: '',
   }
 }
 
@@ -50,25 +53,28 @@ function COEEntry() {
   const [loadingDoc, setLoadingDoc] = useState(false)
 
   const [header, setHeader] = useState(emptyHeader)
-  const [entries, setEntries] = useState([]) // grid rows (no embedded events anymore)
-  const [events, setEvents] = useState([]) // flat, date-keyed: [{ Text, Color, Date }]
+  const [titleManuallyEdited, setTitleManuallyEdited] = useState(false)
+  const [entries, setEntries] = useState([])
+  const [events, setEvents] = useState([])
 
-  // Single-date popup (click a date number)
-  const [datePopup, setDatePopup] = useState(null) // { date: 'YYYY-MM-DD', label } | null
+  const [datePopup, setDatePopup] = useState(null)
   const [newEventText, setNewEventText] = useState('')
   const [newEventColor, setNewEventColor] = useState(EVENT_COLORS[0].hex)
+  const [newEventIsHoliday, setNewEventIsHoliday] = useState(false)
 
-  // Range event form (per-row "+ Add General Event")
-  const [rangeEventFor, setRangeEventFor] = useState(null) // rowIndex | null
+  const [rangeEventFor, setRangeEventFor] = useState(null)
   const [rangeFrom, setRangeFrom] = useState('')
   const [rangeTo, setRangeTo] = useState('')
 
-  // Common/preset semester event picker
   const [commonLabel, setCommonLabel] = useState(COMMON_EVENTS[0].label)
   const [commonDate, setCommonDate] = useState('')
   const [commonColor, setCommonColor] = useState(COMMON_EVENTS[0].color)
 
   const [fetchingHolidays, setFetchingHolidays] = useState(false)
+
+  const availableCommonEvents = COMMON_EVENTS.filter(
+    (c) => !events.some((e) => e.Text === c.label)
+  )
 
   const loadDocList = () => {
     fetch(`${API_URL}/api/coe`)
@@ -84,6 +90,7 @@ function COEEntry() {
   const loadSelectedDoc = (id) => {
     if (!id) {
       setHeader(emptyHeader)
+      setTitleManuallyEdited(false)
       setEntries([])
       setEvents([])
       return
@@ -118,7 +125,16 @@ function COEEntry() {
 
   const handleHeaderChange = (e) => {
     const { name, value } = e.target
-    setHeader((prev) => ({ ...prev, [name]: value }))
+    setHeader((prev) => {
+      const next = { ...prev, [name]: value }
+      if (name === 'Title') {
+        setTitleManuallyEdited(true)
+      } else if (['Semester', 'AcademicYear', 'Term'].includes(name) && !titleManuallyEdited) {
+        const auto = buildAutoTitle(next)
+        if (auto) next.Title = auto
+      }
+      return next
+    })
   }
 
   const handleSignatoryChange = (index, value) => {
@@ -128,9 +144,6 @@ function COEEntry() {
     }))
   }
 
-  // Generates week rows Sun-Sat between StartDate and EndDate.
-  // A week that crosses a month boundary is split into two rows
-  // (same Week label, each showing only that month's days).
   const generateWeeks = () => {
     if (!header.StartDate || !header.EndDate) {
       alert('Please select Start Date and End Date first')
@@ -165,12 +178,6 @@ function COEEntry() {
     setEntries(generated)
   }
 
-  const handleEntryChange = (index, field, value) => {
-    setEntries((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
-    )
-  }
-
   const addEvents = (newOnes) => {
     setEvents((prev) => [...prev, ...newOnes])
   }
@@ -179,8 +186,6 @@ function COEEntry() {
     setEvents((prev) => prev.filter((_, i) => i !== globalIndex))
   }
 
-  // Removes every date belonging to a merged range/group in one go, since
-  // it's now shown (and should be removable) as a single logical event.
   const removeEventGroup = (group) => {
     setEvents((prev) =>
       prev.filter(
@@ -193,25 +198,27 @@ function COEEntry() {
   // --- Single date-number click popup ---
   const openDatePopup = (row, dayKey) => {
     const iso = cellToISODate(row, dayKey)
-    if (!iso) return // blank cell (belongs to the other month in a split week)
+    if (!iso) return
     setDatePopup({ date: iso, label: `${row[dayKey]} ${row.Month} (${dayKey})` })
     setNewEventText('')
     setNewEventColor(EVENT_COLORS[0].hex)
+    setNewEventIsHoliday(false)
   }
 
   const confirmSingleDateEvent = () => {
     if (!newEventText.trim() || !datePopup) return
-    addEvents([{ Text: newEventText.trim(), Color: newEventColor, Date: datePopup.date }])
+    addEvents([{ Text: newEventText.trim(), Color: newEventColor, Date: datePopup.date, IsHoliday: newEventIsHoliday }])
     setDatePopup(null)
   }
 
-  // --- Range event (Add General Event) ---
+  // --- Range event ---
   const openRangeForm = (rowIndex) => {
     setRangeEventFor(rowIndex)
     setRangeFrom('')
     setRangeTo('')
     setNewEventText('')
     setNewEventColor(EVENT_COLORS[0].hex)
+    setNewEventIsHoliday(false)
   }
 
   const confirmRangeEvent = () => {
@@ -220,7 +227,7 @@ function COEEntry() {
       return
     }
     const dates = datesInRange(rangeFrom, rangeTo)
-    addEvents(dates.map((d) => ({ Text: newEventText.trim(), Color: newEventColor, Date: d })))
+    addEvents(dates.map((d) => ({ Text: newEventText.trim(), Color: newEventColor, Date: d, IsHoliday: newEventIsHoliday })))
     setRangeEventFor(null)
   }
 
@@ -236,8 +243,17 @@ function COEEntry() {
       alert('Pick a date for this event first')
       return
     }
-    addEvents([{ Text: commonLabel, Color: commonColor, Date: commonDate }])
+    const preset = availableCommonEvents.find((c) => c.label === commonLabel)
+    if (!preset) return
+    addEvents([{ Text: preset.label, Color: commonColor, Date: commonDate, IsHoliday: false }])
     setCommonDate('')
+    const remaining = availableCommonEvents.filter((c) => c.label !== preset.label)
+    if (remaining.length > 0) {
+      setCommonLabel(remaining[0].label)
+      setCommonColor(remaining[0].color)
+    } else {
+      setCommonLabel('')
+    }
   }
 
   // --- Government holidays ---
@@ -255,7 +271,10 @@ function COEEntry() {
     try {
       const results = await Promise.all(
         years.map((y) =>
-          fetch(`https://date.nager.at/api/v3/PublicHolidays/${y}/IN`).then((r) => (r.ok ? r.json() : []))
+          fetch(`https://date.nager.at/api/v4/Holidays/IN/${y}`).then((r) => {
+            if (!r.ok) throw new Error(`Nager API returned ${r.status} for year ${y}`)
+            return r.json()
+          })
         )
       )
       const holidays = results.flat().filter((h) => h.date >= header.StartDate && h.date <= header.EndDate)
@@ -268,12 +287,15 @@ function COEEntry() {
       setEvents((prev) => {
         const existingKeys = new Set(prev.map((e) => `${e.Date}|${e.Text}`))
         const additions = holidays
-          .filter((h) => !existingKeys.has(`${h.date}|${h.localName}`))
-          .map((h) => ({ Text: h.localName, Color: GOVT_HOLIDAY_COLOR, Date: h.date }))
+          .filter((h) => !existingKeys.has(`${h.date}|${h.name}`))
+          .map((h) => ({ Text: h.name, Color: GOVT_HOLIDAY_COLOR, Date: h.date, IsHoliday: true }))
         return [...prev, ...additions]
       })
     } catch (err) {
-      alert('Failed to fetch government holidays. Check your internet connection.')
+      console.error('Government holiday fetch failed:', err)
+      alert(
+        'Failed to fetch government holidays. This usually means either no internet access, or your network/browser is blocking requests to date.nager.at. Check the browser console for details.'
+      )
     } finally {
       setFetchingHolidays(false)
     }
@@ -284,10 +306,15 @@ function COEEntry() {
     const url = isUpdate ? `${API_URL}/api/coe/${selectedId}` : `${API_URL}/api/coe`
     const method = isUpdate ? 'PUT' : 'POST'
 
+    const entriesWithWorkingDays = entries.map((row) => ({
+      ...row,
+      WorkingDays: computeWorkingDays(row, events),
+    }))
+
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...header, Entries: entries, Events: events }),
+      body: JSON.stringify({ ...header, Entries: entriesWithWorkingDays, Events: events }),
     })
     const data = await res.json()
 
@@ -300,6 +327,9 @@ function COEEntry() {
     loadDocList()
     if (!isUpdate) setSelectedId(data._id)
   }
+
+  const sortedEvents = events.map((ev, ei) => ({ ...ev, ei })).sort((a, b) => a.Date.localeCompare(b.Date))
+  const eventGroups = groupEventsIntoRanges(events)
 
   return (
     <div className="w-full font-mono">
@@ -324,18 +354,6 @@ function COEEntry() {
       {!selectedId && (
         <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4 mb-6">
           <h3 className="text-lg font-semibold border-b pb-2">Document Header</h3>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
-            <input
-              type="text"
-              name="Title"
-              value={header.Title}
-              onChange={handleHeaderChange}
-              placeholder="e.g. Tentative Calendar of Events (CoE) of B.E. III Semester 2026-27 (ODD)"
-              className="border px-2 py-1 rounded w-full"
-            />
-          </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -372,6 +390,20 @@ function COEEntry() {
                 <option value="EVEN">EVEN</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Title {!titleManuallyEdited && <span className="text-xs text-slate-400 font-normal">(auto-filled from Semester/Year/Term — edit to override)</span>}
+            </label>
+            <input
+              type="text"
+              name="Title"
+              value={header.Title}
+              onChange={handleHeaderChange}
+              placeholder="Fill Semester, Academic Year and Term above to auto-generate"
+              className="border px-2 py-1 rounded w-full"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -470,7 +502,6 @@ function COEEntry() {
         </div>
       )}
 
-      {/* Common semester events — usable any time, even before weeks are generated */}
       <div className="border rounded-lg p-4 bg-white shadow-sm mb-6">
         <h3 className="text-sm font-semibold mb-2">Add Common Semester Event</h3>
         <div className="flex flex-wrap items-end gap-2">
@@ -479,9 +510,11 @@ function COEEntry() {
             <select
               value={commonLabel}
               onChange={(e) => handleCommonLabelChange(e.target.value)}
+              disabled={availableCommonEvents.length === 0}
               className="border px-2 py-1 rounded text-sm max-w-xs"
             >
-              {COMMON_EVENTS.map((c) => (
+              {availableCommonEvents.length === 0 && <option value="">All common events added</option>}
+              {availableCommonEvents.map((c) => (
                 <option key={c.label} value={c.label}>
                   {c.label}
                 </option>
@@ -494,12 +527,13 @@ function COEEntry() {
               type="date"
               value={commonDate}
               onChange={(e) => setCommonDate(e.target.value)}
+              disabled={availableCommonEvents.length === 0}
               className="border px-2 py-1 rounded text-sm"
             />
           </div>
           <div>
             <label className="block text-xs text-slate-500 mb-1">Color</label>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap max-w-[220px]">
               {EVENT_COLORS.map((c) => (
                 <button
                   key={c.hex}
@@ -516,25 +550,27 @@ function COEEntry() {
           </div>
           <button
             onClick={addCommonEvent}
-            className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700"
+            disabled={availableCommonEvents.length === 0}
+            className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
           >
             Add Event
           </button>
         </div>
 
-        {events.length > 0 && (
+        {sortedEvents.length > 0 && (
           <div className="mt-3 pt-3 border-t">
-            <p className="text-xs text-slate-500 mb-1">All events added so far ({events.length}):</p>
+            <p className="text-xs text-slate-500 mb-1">All events, date order ({sortedEvents.length}):</p>
             <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              {events.map((ev, ei) => (
+              {sortedEvents.map((ev) => (
                 <span
-                  key={ei}
+                  key={ev.ei}
                   style={{ backgroundColor: ev.Color }}
                   className="text-white text-xs px-2 py-1 rounded flex items-center gap-1"
                 >
                   {ev.Date}: {ev.Text}
+                  {ev.IsHoliday ? ' 🔴' : ''}
                   <button
-                    onClick={() => removeEventAt(ei)}
+                    onClick={() => removeEventAt(ev.ei)}
                     className="ml-1 font-bold leading-none"
                     title="Remove event"
                   >
@@ -551,7 +587,7 @@ function COEEntry() {
         <div className="overflow-x-auto">
           <p className="text-xs text-slate-500 mb-2">
             Click any date number to add an event for that date. Sundays and the 1st/3rd Saturdays of
-            each month are auto-marked as holidays.
+            each month are auto-marked as holidays. Working Days is calculated automatically.
           </p>
 
           <table className="w-full border-collapse bg-white shadow-sm text-sm">
@@ -562,16 +598,13 @@ function COEEntry() {
                 {DAY_KEYS.map((d) => (
                   <th key={d} className="border px-2 py-1">{d}</th>
                 ))}
-                <th className="border px-2 py-1">Working Days</th>
+                <th className="border px-1 py-1 w-14 text-xs">WD</th>
                 <th className="border px-2 py-1 w-72">Events</th>
               </tr>
             </thead>
             <tbody>
-              {(() => {
-                const eventGroups = groupEventsIntoRanges(events)
-                return entries.map((row, index) => {
+              {entries.map((row, index) => {
                 const rowDates = new Set(DAY_KEYS.map((k) => cellToISODate(row, k)).filter(Boolean))
-                // Show each event/range once, on the row containing its start date
                 const rowEventGroups = eventGroups.filter((g) => rowDates.has(g.StartDate))
 
                 return (
@@ -602,13 +635,8 @@ function COEEntry() {
                       )
                     })}
 
-                    <td className="border px-2 py-1">
-                      <input
-                        type="text"
-                        value={row.WorkingDays}
-                        onChange={(e) => handleEntryChange(index, 'WorkingDays', e.target.value)}
-                        className="w-12 border-0 focus:outline-none"
-                      />
+                    <td className="border px-1 py-1 text-center text-xs w-14">
+                      {computeWorkingDays(row, events)}
                     </td>
 
                     <td className="border px-2 py-1 align-top">
@@ -661,7 +689,7 @@ function COEEntry() {
                             className="border px-2 py-1 rounded text-xs"
                             autoFocus
                           />
-                          <div className="flex gap-1 flex-wrap">
+                          <div className="flex gap-1 flex-wrap max-w-[240px]">
                             {EVENT_COLORS.map((c) => (
                               <button
                                 key={c.hex}
@@ -675,6 +703,14 @@ function COEEntry() {
                               />
                             ))}
                           </div>
+                          <label className="flex items-center gap-1 text-[10px] text-slate-600">
+                            <input
+                              type="checkbox"
+                              checked={newEventIsHoliday}
+                              onChange={(e) => setNewEventIsHoliday(e.target.checked)}
+                            />
+                            Counts as a holiday (reduces Working Days)
+                          </label>
                           <div className="flex gap-1">
                             <button
                               onClick={confirmRangeEvent}
@@ -701,8 +737,7 @@ function COEEntry() {
                     </td>
                   </tr>
                 )
-              })
-              })()}
+              })}
             </tbody>
           </table>
 
@@ -715,7 +750,6 @@ function COEEntry() {
         </div>
       )}
 
-      {/* Single date-number click popup */}
       {datePopup && (
         <div
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
@@ -731,7 +765,7 @@ function COEEntry() {
               className="border px-2 py-1 rounded text-sm w-full mb-2"
               autoFocus
             />
-            <div className="flex gap-1 flex-wrap mb-3">
+            <div className="flex gap-1 flex-wrap mb-2 max-w-[280px]">
               {EVENT_COLORS.map((c) => (
                 <button
                   key={c.hex}
@@ -745,6 +779,14 @@ function COEEntry() {
                 />
               ))}
             </div>
+            <label className="flex items-center gap-1 text-xs text-slate-600 mb-3">
+              <input
+                type="checkbox"
+                checked={newEventIsHoliday}
+                onChange={(e) => setNewEventIsHoliday(e.target.checked)}
+              />
+              Counts as a holiday (reduces Working Days)
+            </label>
             <div className="flex justify-end gap-2">
               <button onClick={() => setDatePopup(null)} className="px-3 py-1 rounded text-sm border">
                 Cancel

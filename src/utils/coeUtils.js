@@ -3,21 +3,33 @@
 export const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export const EVENT_COLORS = [
-  { name: 'Red', hex: '#8e2521' },
-  { name: 'Lavender', hex: '#7436e0' },
-  { name: 'Teal', hex: '#16f5c8' },
-  { name: 'Orange', hex: '#ed6f08' },
-  { name: 'Pink', hex: '#d40e53' },
-  { name: 'Tan', hex: '#8f6504' },
-  { name: 'Blue', hex: '#0679f4' },
-  { name: 'Green', hex: '#08f046' },
+  { name: 'Red', hex: '#d9534f' },
+  { name: 'Crimson', hex: '#c0392b' },
+  { name: 'Coral', hex: '#e0705f' },
+  { name: 'Orange', hex: '#e0904f' },
+  { name: 'Gold', hex: '#b8860b' },
+  { name: 'Tan', hex: '#b39a5f' },
+  { name: 'Olive', hex: '#7c9a3f' },
+  { name: 'Green', hex: '#4f8a5f' },
+  { name: 'Teal', hex: '#3f8f7f' },
+  { name: 'Cyan', hex: '#3fa6a6' },
+  { name: 'Sky', hex: '#4a90d9' },
+  { name: 'Blue', hex: '#6fa2d8' },
+  { name: 'Indigo', hex: '#6a5fc0' },
+  { name: 'Purple', hex: '#8e5fc0' },
+  { name: 'Lavender', hex: '#b8a3dd' },
+  { name: 'Magenta', hex: '#c05fa0' },
+  { name: 'Pink', hex: '#e08aa8' },
+  { name: 'Rose', hex: '#d46a86' },
+  { name: 'Brown', hex: '#8a5a3f' },
+  { name: 'Slate', hex: '#64748b' },
 ]
 
 // Soft red used for auto-marked holidays (Sundays, 1st & 3rd Saturdays)
-export const HOLIDAY_COLOR = '#fc1104'
+export const HOLIDAY_COLOR = '#f2a6a2'
 
-// Solid red used for fetched government holidays
-export const GOVT_HOLIDAY_COLOR = '#fc1104'
+// Solid red used for fetched government holidays (same tone as the "Red" swatch)
+export const GOVT_HOLIDAY_COLOR = '#d9534f'
 
 // A Saturday's "occurrence number" within its month can be derived
 // from the date number alone: occurrence = ceil(dateNumber / 7).
@@ -28,7 +40,7 @@ function isFirstOrThirdSaturday(dateNum) {
   return occurrence === 1 || occurrence === 3
 }
 
-// Automatic Sunday / 1st & 3rd Saturday holiday tint (independent of any manual event)
+// Automatic Sunday / 1st & 3rd Saturday holiday tint (independent of manual events)
 export function getAutoHolidayColor(dayKey, dateNum) {
   if (dateNum === '' || dateNum === undefined || dateNum === null) return null
   if (dayKey === 'Sun') return HOLIDAY_COLOR
@@ -43,8 +55,6 @@ const MONTH_INDEX = {
 
 // Reconstructs the real ISO date (YYYY-MM-DD) for a grid cell, using the
 // row's Month name + Year + the date number in that day column.
-// Returns null for blank cells (e.g. days that belong to the other month
-// in a split week row).
 export function cellToISODate(row, dayKey) {
   const dateNum = row[dayKey]
   if (dateNum === '' || dateNum === undefined || dateNum === null) return null
@@ -69,79 +79,64 @@ export function datesInRange(fromISO, toISO) {
   return dates
 }
 
-const MONTH_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-]
-
-// True when isoB is exactly one calendar day after isoA.
-function isNextDay(isoA, isoB) {
-  const a = new Date(isoA)
-  const b = new Date(isoB)
-  const diffDays = Math.round((b - a) / (1000 * 60 * 60 * 24))
-  return diffDays === 1
+// Working days = non-blank days in this row that are NOT an auto-holiday
+// (Sunday / 1st & 3rd Saturday) and don't have an event flagged IsHoliday.
+export function computeWorkingDays(row, events) {
+  let working = 0
+  DAY_KEYS.forEach((dayKey) => {
+    const dateNum = row[dayKey]
+    if (dateNum === '' || dateNum === undefined || dateNum === null) return
+    const iso = cellToISODate(row, dayKey)
+    const isAutoHoliday = Boolean(getAutoHolidayColor(dayKey, dateNum))
+    const isEventHoliday = events.some((ev) => ev.Date === iso && ev.IsHoliday)
+    if (!isAutoHoliday && !isEventHoliday) working++
+  })
+  return working
 }
 
-// Collapses a flat, date-keyed events list (one entry per date, e.g. a
-// 3-day range saved as 3 separate same-Text/Color entries) into contiguous
-// ranges: [{ Text, Color, StartDate, EndDate }, ...]. Events are grouped
-// only when Text AND Color match AND their dates are back-to-back.
+function isNextDay(isoDate, nextIsoDate) {
+  const d = new Date(isoDate)
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().slice(0, 10) === nextIsoDate
+}
+
+// Merges consecutive-date events sharing the same Text + Color into one
+// logical range, so a multi-day event shows as a single chip.
 export function groupEventsIntoRanges(events) {
-  if (!events || events.length === 0) return []
-
-  const sorted = [...events].sort((a, b) => {
-    if (a.Text !== b.Text) return a.Text < b.Text ? -1 : 1
-    if (a.Color !== b.Color) return a.Color < b.Color ? -1 : 1
-    return a.Date < b.Date ? -1 : 1
-  })
-
+  const sorted = [...events].sort((a, b) => a.Date.localeCompare(b.Date))
   const groups = []
-  let current = null
 
   sorted.forEach((ev) => {
-    if (
-      current &&
-      current.Text === ev.Text &&
-      current.Color === ev.Color &&
-      isNextDay(current.EndDate, ev.Date)
-    ) {
-      current.EndDate = ev.Date
+    const last = groups[groups.length - 1]
+    const isConsecutive =
+      last && last.Text === ev.Text && last.Color === ev.Color && isNextDay(last.EndDate, ev.Date)
+
+    if (isConsecutive) {
+      last.EndDate = ev.Date
     } else {
-      current = { Text: ev.Text, Color: ev.Color, StartDate: ev.Date, EndDate: ev.Date }
-      groups.push(current)
+      groups.push({ Text: ev.Text, Color: ev.Color, StartDate: ev.Date, EndDate: ev.Date })
     }
   })
 
-  return groups
+  return groups.sort((a, b) => a.StartDate.localeCompare(b.StartDate))
 }
 
-// "12 Jul" style day+month label for a single ISO date.
-function formatDayMonth(iso) {
-  const d = new Date(iso)
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${day} ${MONTH_SHORT[d.getMonth()]}`
-}
-
-// Formats a grouped event for display:
-//  - single date:        "12 Jul : Event Name"
-//  - same-month range:   "10 - 12 Jul : Event Name"
-//  - cross-month range:  "30 Jul - 02 Aug : Event Name"
+// "14 Sep: Ganesha Chaturthi" for a single day, "01-04 Sep: PAC Meeting" for a range.
 export function formatEventLabel(group) {
-  if (group.StartDate === group.EndDate) {
-    return `${formatDayMonth(group.StartDate)} : ${group.Text}`
-  }
-
   const start = new Date(group.StartDate)
   const end = new Date(group.EndDate)
-  const startDay = String(start.getDate()).padStart(2, '0')
-  const endDay = String(end.getDate()).padStart(2, '0')
+  const startDay = start.getDate()
+  const endDay = end.getDate()
+  const monthShort = start.toLocaleString('default', { month: 'short' })
 
-  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()
-  const range = sameMonth
-    ? `${startDay} - ${endDay} ${MONTH_SHORT[end.getMonth()]}`
-    : `${startDay} ${MONTH_SHORT[start.getMonth()]} - ${endDay} ${MONTH_SHORT[end.getMonth()]}`
-
-  return `${range} : ${group.Text}`
+  if (group.StartDate === group.EndDate) {
+    return `${startDay} ${monthShort}: ${group.Text}`
+  }
+  if (start.getMonth() === end.getMonth()) {
+    return `${startDay}-${endDay} ${monthShort}: ${group.Text}`
+  }
+  const endMonthShort = end.toLocaleString('default', { month: 'short' })
+  return `${startDay} ${monthShort} - ${endDay} ${endMonthShort}: ${group.Text}`
 }
 
 // Common events that repeat every semester, with a suggested color each.
@@ -151,20 +146,20 @@ export const COMMON_EVENTS = [
   { label: 'Announcement of Continuous Comprehensive Assessment (CCA) - CCA1 and CCA2', color: '#6fa2d8' },
   { label: 'Evaluation of CCA1', color: '#3f8f7f' },
   { label: 'Evaluation of CCA2', color: '#3f8f7f' },
-  { label: 'Finalization of CCA1', color: '#3f8f7f' },
-  { label: 'Finalization of CCA2', color: '#3f8f7f' },
+  { label: 'Finalization of CCA1', color: '#3fa6a6' },
+  { label: 'Finalization of CCA2', color: '#3fa6a6' },
   { label: 'Faculty Feedback-1 by Students', color: '#b39a5f' },
   { label: 'Faculty Feedback-2 by Students', color: '#b39a5f' },
   { label: 'Internal Assessment 1', color: '#d9534f' },
   { label: 'Internal Assessment 2', color: '#d9534f' },
   { label: 'Last Date to enter IA1 Marks in Contineo Portal', color: '#e0904f' },
   { label: 'Last Date to enter IA2 Marks in Contineo Portal', color: '#e0904f' },
-  { label: 'IA1 QPs Scrutiny', color: '#6fa2d8' },
-  { label: 'IA2 QPs Scrutiny', color: '#6fa2d8' },
-  { label: 'Major Project Phase II Review 1', color: '#b8a3dd' },
-  { label: 'Major Project Phase II Review 2', color: '#b8a3dd' },
+  { label: 'IA1 QPs Scrutiny', color: '#4a90d9' },
+  { label: 'IA2 QPs Scrutiny', color: '#4a90d9' },
+  { label: 'Major Project Phase II Review 1', color: '#8e5fc0' },
+  { label: 'Major Project Phase II Review 2', color: '#8e5fc0' },
   { label: 'Dropping of the courses', color: '#e08aa8' },
-  { label: 'Parents Teachers Meeting', color: '#e08aa8' },
-  { label: 'Withdrawal of the courses', color: '#e08aa8' },
-  { label: 'Freezing of CIE Marks and Attendance in Contineo Portal', color: '#e0904f' },
+  { label: 'Parents Teachers Meeting', color: '#c05fa0' },
+  { label: 'Withdrawal of the courses', color: '#d46a86' },
+  { label: 'Freezing of CIE Marks and Attendance in Contineo Portal', color: '#8a5a3f' },
 ]
