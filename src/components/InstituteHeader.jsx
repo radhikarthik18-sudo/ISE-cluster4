@@ -7,14 +7,14 @@
 //   public/logos/vtu-logo.png
 // If a logo file is missing, it just hides itself instead of showing a broken image icon.
 
-function InstituteHeader({ title }) {
+function InstituteHeader({ title, semester, academic, term }) {
   return (
     <div className="border-b-2 border-slate-800 print:break-inside-avoid">
       <div className="flex items-center justify-between p-3 gap-3">
         <img
           src="/logos/bmsit-logo.jpeg"
           alt="BMSIT Logo"
-          className="w-16 h-16 object-contain shrink-0"
+          className="w-20 h-20 object-cover shrink-0"
           onError={(e) => {
             e.currentTarget.style.visibility = 'hidden'
           }}
@@ -26,11 +26,20 @@ function InstituteHeader({ title }) {
           <div className="text-[10px]">(An Autonomous Institution affiliated to VTU, Belagavi)</div>
           <div className="text-[10px]">Yelahanka, Bengaluru-560119</div>
           {title && <div className="text-blue-700 font-semibold mt-1">{title}</div>}
+          {(semester || academic || term) && (
+            <div className="text-[11px] font-medium text-slate-700 mt-0.5">
+              {semester && `Semester: ${semester}`}
+              {semester && (academic || term) && ' | '}
+              {academic && `Academic Year: ${academic}`}
+              {academic && term && ' | '}
+              {term && `Term: ${term}`}
+            </div>
+          )}
         </div>
         <img
           src="/logos/vtu-logo.jpeg"
           alt="VTU Logo"
-          className="w-16 h-16 object-contain shrink-0"
+          className="w-20 h-20 object-cover shrink-0"
           onError={(e) => {
             e.currentTarget.style.visibility = 'hidden'
           }}

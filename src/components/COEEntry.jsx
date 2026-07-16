@@ -4,6 +4,7 @@ import {
   EVENT_COLORS,
   COMMON_EVENTS,
   GOVT_HOLIDAY_COLOR,
+  KARNATAKA_HOLIDAYS,
   getAutoHolidayColor,
   cellToISODate,
   datesInRange,
@@ -69,8 +70,6 @@ function COEEntry() {
   const [commonLabel, setCommonLabel] = useState(COMMON_EVENTS[0].label)
   const [commonDate, setCommonDate] = useState('')
   const [commonColor, setCommonColor] = useState(COMMON_EVENTS[0].color)
-
-  const [fetchingHolidays, setFetchingHolidays] = useState(false)
 
   const availableCommonEvents = COMMON_EVENTS.filter(
     (c) => !events.some((e) => e.Text === c.label)
@@ -256,8 +255,8 @@ function COEEntry() {
     }
   }
 
-  // --- Government holidays ---
-  const fetchGovtHolidays = async () => {
+  // --- Karnataka government holidays (hardcoded list, no network needed) ---
+  const fetchGovtHolidays = () => {
     if (!header.StartDate || !header.EndDate) {
       alert('Please set Start Date and End Date first')
       return
@@ -267,37 +266,30 @@ function COEEntry() {
     const years = []
     for (let y = startYear; y <= endYear; y++) years.push(y)
 
-    setFetchingHolidays(true)
-    try {
-      const results = await Promise.all(
-        years.map((y) =>
-          fetch(`https://date.nager.at/api/v4/Holidays/IN/${y}`).then((r) => {
-            if (!r.ok) throw new Error(`Nager API returned ${r.status} for year ${y}`)
-            return r.json()
-          })
-        )
-      )
-      const holidays = results.flat().filter((h) => h.date >= header.StartDate && h.date <= header.EndDate)
+    const availableYears = years.filter((y) => KARNATAKA_HOLIDAYS[y])
+    const missingYears = years.filter((y) => !KARNATAKA_HOLIDAYS[y])
+    const allHolidays = availableYears.flatMap((y) => KARNATAKA_HOLIDAYS[y])
+    const holidays = allHolidays.filter((h) => h.date >= header.StartDate && h.date <= header.EndDate)
 
-      if (holidays.length === 0) {
-        alert('No government holidays found in this date range')
-        return
-      }
-
-      setEvents((prev) => {
-        const existingKeys = new Set(prev.map((e) => `${e.Date}|${e.Text}`))
-        const additions = holidays
-          .filter((h) => !existingKeys.has(`${h.date}|${h.name}`))
-          .map((h) => ({ Text: h.name, Color: GOVT_HOLIDAY_COLOR, Date: h.date, IsHoliday: true }))
-        return [...prev, ...additions]
-      })
-    } catch (err) {
-      console.error('Government holiday fetch failed:', err)
+    if (holidays.length === 0) {
       alert(
-        'Failed to fetch government holidays. This usually means either no internet access, or your network/browser is blocking requests to date.nager.at. Check the browser console for details.'
+        missingYears.length > 0
+          ? `No Karnataka holiday data available yet for ${missingYears.join(', ')}. Add those manually via "Add Common Semester Event" or by clicking a date once the gazette is published.`
+          : 'No Karnataka government holidays found in this date range'
       )
-    } finally {
-      setFetchingHolidays(false)
+      return
+    }
+
+    setEvents((prev) => {
+      const existingKeys = new Set(prev.map((e) => `${e.Date}|${e.Text}`))
+      const additions = holidays
+        .filter((h) => !existingKeys.has(`${h.date}|${h.name}`))
+        .map((h) => ({ Text: h.name, Color: GOVT_HOLIDAY_COLOR, Date: h.date, IsHoliday: true }))
+      return [...prev, ...additions]
+    })
+
+    if (missingYears.length > 0) {
+      alert(`Added Karnataka holidays for ${availableYears.join(', ')}. No data yet for ${missingYears.join(', ')} — add those manually once published.`)
     }
   }
 
@@ -475,10 +467,9 @@ function COEEntry() {
             </button>
             <button
               onClick={fetchGovtHolidays}
-              disabled={fetchingHolidays}
-              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             >
-              {fetchingHolidays ? 'Fetching Holidays...' : 'Fetch Government Holidays'}
+              Add Karnataka Holidays
             </button>
           </div>
         </div>
@@ -494,10 +485,9 @@ function COEEntry() {
           </div>
           <button
             onClick={fetchGovtHolidays}
-            disabled={fetchingHolidays}
-            className="bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 disabled:opacity-50 text-xs"
+            className="bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 text-xs"
           >
-            {fetchingHolidays ? 'Fetching...' : 'Fetch Government Holidays'}
+            Add Karnataka Holidays
           </button>
         </div>
       )}
@@ -557,22 +547,21 @@ function COEEntry() {
           </button>
         </div>
 
-        {sortedEvents.length > 0 && (
+        {eventGroups.length > 0 && (
           <div className="mt-3 pt-3 border-t">
-            <p className="text-xs text-slate-500 mb-1">All events, date order ({sortedEvents.length}):</p>
+            <p className="text-xs text-slate-500 mb-1">All events ({eventGroups.length}):</p>
             <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              {sortedEvents.map((ev) => (
+              {eventGroups.map((g, gi) => (
                 <span
-                  key={ev.ei}
-                  style={{ backgroundColor: ev.Color }}
+                  key={gi}
+                  style={{ backgroundColor: g.Color }}
                   className="text-white text-xs px-2 py-1 rounded flex items-center gap-1"
                 >
-                  {ev.Date}: {ev.Text}
-                  {ev.IsHoliday ? ' 🔴' : ''}
+                  {formatEventLabel(g)}
                   <button
-                    onClick={() => removeEventAt(ev.ei)}
+                    onClick={() => removeEventGroup(g)}
                     className="ml-1 font-bold leading-none"
-                    title="Remove event"
+                    title="Remove this entire event range"
                   >
                     ×
                   </button>
@@ -590,7 +579,7 @@ function COEEntry() {
             each month are auto-marked as holidays. Working Days is calculated automatically.
           </p>
 
-          <table className="w-full border-collapse bg-white shadow-sm text-sm">
+          <table className="w-full border-collapse bg-white shadow-sm text-xs">
             <thead>
               <tr className="bg-slate-800 text-white">
                 <th className="border px-2 py-1">Month</th>
@@ -756,13 +745,13 @@ function COEEntry() {
           onClick={() => setDatePopup(null)}
         >
           <div className="bg-white rounded-lg shadow-lg p-4 w-80" onClick={(e) => e.stopPropagation()}>
-            <h4 className="text-sm font-semibold mb-2">Add Event — {datePopup.label}</h4>
+            <h4 className="text-xs font-semibold mb-2">Add Event — {datePopup.label}</h4>
             <input
               type="text"
               value={newEventText}
               onChange={(e) => setNewEventText(e.target.value)}
               placeholder="Event text (e.g. Gandhi Jayanti)"
-              className="border px-2 py-1 rounded text-sm w-full mb-2"
+              className="border px-2 py-1 rounded text-xs w-full mb-2"
               autoFocus
             />
             <div className="flex gap-1 flex-wrap mb-2 max-w-[280px]">
@@ -788,12 +777,12 @@ function COEEntry() {
               Counts as a holiday (reduces Working Days)
             </label>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setDatePopup(null)} className="px-3 py-1 rounded text-sm border">
+              <button onClick={() => setDatePopup(null)} className="px-3 py-1 rounded text-xs border">
                 Cancel
               </button>
               <button
                 onClick={confirmSingleDateEvent}
-                className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
               >
                 Add
               </button>

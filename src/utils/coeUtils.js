@@ -26,10 +26,10 @@ export const EVENT_COLORS = [
 ]
 
 // Soft red used for auto-marked holidays (Sundays, 1st & 3rd Saturdays)
-export const HOLIDAY_COLOR = '#f2a6a2'
+export const HOLIDAY_COLOR = '#db0b04'
 
 // Solid red used for fetched government holidays (same tone as the "Red" swatch)
-export const GOVT_HOLIDAY_COLOR = '#d9534f'
+export const GOVT_HOLIDAY_COLOR = '#db0b04'
 
 // A Saturday's "occurrence number" within its month can be derived
 // from the date number alone: occurrence = ceil(dateNumber / 7).
@@ -103,7 +103,15 @@ function isNextDay(isoDate, nextIsoDate) {
 // Merges consecutive-date events sharing the same Text + Color into one
 // logical range, so a multi-day event shows as a single chip.
 export function groupEventsIntoRanges(events) {
-  const sorted = [...events].sort((a, b) => a.Date.localeCompare(b.Date))
+  // Sort by Text+Color first so every occurrence of the SAME event sits
+  // next to each other (in date order). Sorting by Date alone would
+  // interleave different same-day events and break the consecutive-day
+  // chain for anything else running in parallel.
+  const sorted = [...events].sort((a, b) => {
+    if (a.Text !== b.Text) return a.Text < b.Text ? -1 : 1
+    if (a.Color !== b.Color) return a.Color < b.Color ? -1 : 1
+    return a.Date.localeCompare(b.Date)
+  })
   const groups = []
 
   sorted.forEach((ev) => {
@@ -163,3 +171,42 @@ export const COMMON_EVENTS = [
   { label: 'Withdrawal of the courses', color: '#d46a86' },
   { label: 'Freezing of CIE Marks and Attendance in Contineo Portal', color: '#8a5a3f' },
 ]
+// Karnataka state government/bank holiday list, sourced from official-adjacent
+// gazette summaries (greytHR) as of mid-2026. Dates for religious/lunar festivals
+// are provisional per those sources and may shift slightly with the final state
+// gazette notification. Add more years here as they're published — there's no
+// free API for state-level Indian holidays, so this is maintained by hand.
+export const KARNATAKA_HOLIDAYS = {
+  2026: [
+    { date: '2026-01-01', name: 'New Year' },
+    { date: '2026-01-15', name: 'Makara Sankranti' },
+    { date: '2026-01-26', name: 'Republic Day' },
+    { date: '2026-01-27', name: 'Sri Madvanavami' },
+    { date: '2026-02-04', name: 'Shab-e-Barath' },
+    { date: '2026-03-02', name: 'Holi' },
+    { date: '2026-03-17', name: 'Shab-e-Qadar' },
+    { date: '2026-03-19', name: 'Ugadi' },
+    { date: '2026-03-20', name: 'Jumat-ul-Wida' },
+    { date: '2026-03-21', name: 'Khutub-E-Ramzan' },
+    { date: '2026-03-23', name: 'Devara Dasimaiah Jayanthi' },
+    { date: '2026-03-27', name: 'Sri Ramanavami' },
+    { date: '2026-03-31', name: 'Mahaveera Jayanthi' },
+    { date: '2026-04-03', name: 'Good Friday' },
+    { date: '2026-04-14', name: 'Dr. B R Ambedkar Jayanthi' },
+    { date: '2026-04-20', name: 'Basava Jayanthi / Akshaya Tritiya' },
+    { date: '2026-04-21', name: 'Sri Shankaracharya Jayanthi' },
+    { date: '2026-04-22', name: 'Sri Ramanujacharya Jayanthi' },
+    { date: '2026-05-01', name: 'May Day' },
+    { date: '2026-05-28', name: 'Bakrid' },
+    { date: '2026-06-26', name: 'Last day of Muharram' },
+    { date: '2026-08-15', name: 'Independence Day' },
+    { date: '2026-08-26', name: 'Eid-e-Milad' },
+    { date: '2026-09-14', name: 'Ganesha Chaturthi (Varasiddhi Vinayaka Vrata)' },
+    { date: '2026-10-02', name: 'Gandhi Jayanthi' },
+    { date: '2026-10-20', name: 'Vijayadashami' },
+    { date: '2026-10-26', name: 'Valmiki Jayanthi' },
+    { date: '2026-11-10', name: 'Balipadyami / Deepavali' },
+    { date: '2026-11-27', name: 'Kanakadasa Jayanthi' },
+    { date: '2026-12-25', name: 'Christmas' },
+  ],
+}
