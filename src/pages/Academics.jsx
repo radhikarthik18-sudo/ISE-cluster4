@@ -12,6 +12,7 @@ import CoursePlan from '../components/CoursePlan'
 import AttendanceLedger from '../components/AttendanceLedger'
 import COEEntry from '../components/COEEntry'
 import COEView from '../components/COEView'
+
 function Academics() {
   const [activeItem, setActiveItem] = useState('courses')
   const [activeTab, setActiveTab] = useState('')

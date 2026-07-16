@@ -71,6 +71,7 @@ function COEEntry() {
   const [commonDate, setCommonDate] = useState('')
   const [commonColor, setCommonColor] = useState(COMMON_EVENTS[0].color)
 
+  const [editingHeader, setEditingHeader] = useState(false)
   const availableCommonEvents = COMMON_EVENTS.filter(
     (c) => !events.some((e) => e.Text === c.label)
   )
@@ -343,7 +344,7 @@ function COEEntry() {
 
       {loadingDoc && <p className="text-sm text-slate-500 mb-4">Loading calendar...</p>}
 
-      {!selectedId && (
+      {(!selectedId || editingHeader) && (
         <div className="border rounded-lg p-4 bg-white shadow-sm space-y-4 mb-6">
           <h3 className="text-lg font-semibold border-b pb-2">Document Header</h3>
 
@@ -459,23 +460,33 @@ function COEEntry() {
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={generateWeeks}
-              className="bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800"
-            >
-              Generate Weeks
-            </button>
+            {!selectedId && (
+              <button
+                onClick={generateWeeks}
+                className="bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800"
+              >
+                Generate Weeks
+              </button>
+            )}
             <button
               onClick={fetchGovtHolidays}
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             >
               Add Karnataka Holidays
             </button>
+            {editingHeader && (
+              <button
+                onClick={() => setEditingHeader(false)}
+                className="bg-slate-300 text-slate-800 px-4 py-2 rounded hover:bg-slate-400"
+              >
+                Done Editing
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {selectedId && !loadingDoc && header.Title && (
+      {selectedId && !loadingDoc && header.Title && !editingHeader && (
         <div className="border rounded-lg p-4 bg-white shadow-sm mb-6 text-sm flex items-center justify-between">
           <div>
             <p className="font-semibold text-base mb-1">{header.Title}</p>
@@ -483,12 +494,20 @@ function COEEntry() {
               {header.Semester} &nbsp;|&nbsp; {header.AcademicYear} &nbsp;|&nbsp; {header.Term}
             </p>
           </div>
-          <button
-            onClick={fetchGovtHolidays}
-            className="bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 text-xs"
-          >
-            Add Karnataka Holidays
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditingHeader(true)}
+              className="bg-slate-700 text-white px-3 py-1.5 rounded hover:bg-slate-800 text-xs"
+            >
+              Edit Header
+            </button>
+            <button
+              onClick={fetchGovtHolidays}
+              className="bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 text-xs"
+            >
+              Add Karnataka Holidays
+            </button>
+          </div>
         </div>
       )}
 

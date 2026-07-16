@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import CourseFacultyMapView from './CourseFacultyMapView'
 import { API_URL } from '../config'
+
 function CourseFacultyMap() {
   const [courses, setCourses] = useState([])
   const [facultyList, setFacultyList] = useState([])
 
   const [selectedCourseId, setSelectedCourseId] = useState('')
-  const [selectedFacultyId, setSelectedFacultyId] = useState('')
   const [section, setSection] = useState('')
+  const [selectedFacultyId, setSelectedFacultyId] = useState('')
 
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [selectedFaculty, setSelectedFaculty] = useState(null)
+  const [existingMapping, setExistingMapping] = useState(null)
 
   const [showList, setShowList] = useState(false)
 
@@ -24,7 +26,6 @@ function CourseFacultyMap() {
       .then((data) => setFacultyList(data))
   }, [])
 
-  // When course selection changes, fetch its full details (for CourseTitle + Credits)
   useEffect(() => {
     if (!selectedCourseId) {
       setSelectedCourse(null)
@@ -35,7 +36,23 @@ function CourseFacultyMap() {
       .then((data) => setSelectedCourse(data))
   }, [selectedCourseId])
 
-  // When faculty selection changes, fetch their full details (for current CreditsAllotted)
+  // Check for an existing mapping whenever Course + Section are both chosen
+  useEffect(() => {
+    if (!selectedCourse || !section) {
+      setExistingMapping(null)
+      return
+    }
+    fetch(`${API_URL}/api/course-faculty-map/lookup?CourseCode=${selectedCourse.CourseCode}&Section=${section}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setExistingMapping(data)
+        if (data) {
+          const match = facultyList.find((f) => f.FacultyID === data.FacultyID)
+          setSelectedFacultyId(match ? match._id : '')
+        }
+      })
+  }, [selectedCourse, section, facultyList])
+
   useEffect(() => {
     if (!selectedFacultyId) {
       setSelectedFaculty(null)
@@ -46,7 +63,8 @@ function CourseFacultyMap() {
       .then((data) => setSelectedFaculty(data))
   }, [selectedFacultyId])
 
-  // Live preview: faculty's current total + this course's credits
+  const isReassignMode = Boolean(existingMapping)
+
   const previewCredits =
     selectedFaculty && selectedCourse
       ? (Number(selectedFaculty.CreditsAllotted) || 0) + Number(selectedCourse.Credits)
@@ -58,30 +76,52 @@ function CourseFacultyMap() {
       return
     }
 
-    const res = await fetch(`${API_URL}/api/course-faculty-map`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        CourseCode: selectedCourse.CourseCode,
-        CourseTitle: selectedCourse.CourseTitle,
-        Section: section,
-        FacultyID: selectedFaculty.FacultyID,
-        FacultyName: selectedFaculty.Name,
-        Credits: Number(selectedCourse.Credits),
-      }),
-    })
-    const data = await res.json()
-
-    if (!res.ok) {
-      alert(data.error || 'Allocation failed')
-      return
+    if (isReassignMode) {
+      if (existingMapping.FacultyID === selectedFaculty.FacultyID) {
+        alert('This faculty is already assigned to this course/section')
+        return
+      }
+      const res = await fetch(`${API_URL}/api/course-faculty-map/${existingMapping._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          FacultyID: selectedFaculty.FacultyID,
+          FacultyName: selectedFaculty.Name,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || 'Reassignment failed')
+        return
+      }
+      alert('Faculty reassigned!')
+    } else {
+      const res = await fetch(`${API_URL}/api/course-faculty-map`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          CourseCode: selectedCourse.CourseCode,
+          CourseTitle: selectedCourse.CourseTitle,
+          Section: section,
+          FacultyID: selectedFaculty.FacultyID,
+          FacultyName: selectedFaculty.Name,
+          Credits: Number(selectedCourse.Credits),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || 'Allocation failed')
+        return
+      }
+      alert('Subject allocated!')
     }
-    alert('Subject allocated!')
+
     setSelectedCourseId('')
     setSelectedFacultyId('')
     setSection('')
     setSelectedCourse(null)
     setSelectedFaculty(null)
+    setExistingMapping(null)
   }
 
   return (
@@ -126,6 +166,12 @@ function CourseFacultyMap() {
           </select>
         </div>
 
+        {isReassignMode && (
+          <div className="bg-amber-50 border border-amber-300 rounded px-3 py-2 text-sm text-amber-800">
+            Currently assigned to: <strong>{existingMapping.FacultyName}</strong> ({existingMapping.FacultyID}) — selecting a different faculty below will reassign this subject.
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium mb-1 text-gray-700">Faculty</label>
           <select
@@ -167,12 +213,6 @@ function CourseFacultyMap() {
 
       </div>
 
-      <button
-        onClick={handleAllocate}
-        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Allocate Subject
-      </button>
       <div className="flex gap-3 mt-4">
         <button
           onClick={handleAllocate}
