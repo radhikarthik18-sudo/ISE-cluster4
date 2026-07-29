@@ -9,22 +9,28 @@ import Ledger from '../components/AttendanceLedger'
 import LessonPlanUpload from '../components/LessonPlanUpload'
 import LessonPlanManual from '../components/LessonPlanManual'
 import CoursePlan from '../components/CoursePlan'
-import AttendanceLedger from '../components/AttendanceLedger'
+
 import COEEntry from '../components/COEEntry'
 import COEView from '../components/COEView'
+import AttendanceLedger from '../components/AttendanceLedger'
 
 function Academics() {
   const [activeItem, setActiveItem] = useState('courses')
   const [activeTab, setActiveTab] = useState('')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const roles = user.Roles || []
+  const hasAnyRole = (allowedRoles) => allowedRoles.some((r) => roles.includes(r))
 
-  const sidebarItems = [
-    { key: 'attendance', label: 'Attendance' },
-    { key: 'courses', label: 'Courses' },
-    { key: 'coursePlan', label: 'Course Plan' },
-    { key: 'lessonPlan', label: 'Lesson Plan' },
-    { key: 'departmentCOE', label: 'Department COE' }, 
-    
+  const allSidebarItems = [
+    { key: 'attendance', label: 'Attendance', allowedRoles: ['Admin', 'HOD', 'Faculty', 'AcademicCoordinator'] },
+    { key: 'courses', label: 'Courses', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
+    { key: 'lessonPlan', label: 'Lesson Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'AcademicCoordinator'] },
+    { key: 'coursePlan', label: 'Course Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'AcademicCoordinator'] },
+    { key: 'departmentCOE', label: 'Department COE', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
   ]
+
+  const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
+  
 
   const tabsByItem = {
     attendance: [

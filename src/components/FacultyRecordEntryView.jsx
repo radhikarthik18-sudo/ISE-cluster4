@@ -16,26 +16,32 @@ function ViewFaculty({ onEditRequest }) {
     .filter((f) => f.Name.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => a.Name.localeCompare(b.Name))
 
-  const handleRowClick = async (id) => {
-    const res = await fetch(`${API_URL}/api/faculty/${id}`)
+  const handleRowClick = async (facultyId) => {
+    const res = await fetch(`${API_URL}/api/faculty/${facultyId}`)
     const data = await res.json()
     setSelectedFaculty(data)
   }
-  const handleDelete = async (id) => {
+
+  const handleDelete = async (facultyId) => {
     const confirmed = window.confirm('Are you sure you want to delete this faculty member?')
     if (!confirmed) return
 
-    const res = await fetch(`${API_URL}/api/faculty/${id}`, {
+    const res = await fetch(`${API_URL}/api/faculty/${facultyId}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
     })
+    const data = await res.json()
+
     if (res.ok) {
-      setFacultyList((prev) => prev.filter((f) => f._id !== id))
+      setFacultyList((prev) => prev.filter((f) => f.FacultyID !== facultyId))
     } else {
-      alert('Failed to delete')
+      alert(data.error || 'Failed to delete')
     }
   }
 
-  const handleResetPassword = async (id, name) => {
+  const handleResetPassword = async (facultyId, name) => {
     const confirmed = window.confirm(`Generate a new password for ${name}?`)
     if (!confirmed) return
 
@@ -43,24 +49,29 @@ function ViewFaculty({ onEditRequest }) {
     const randomDigits = Math.floor(1000 + Math.random() * 9000)
     const newPassword = `${firstName}@${randomDigits}`
 
-    const res = await fetch(`${API_URL}/api/faculty/${id}/reset-password`, {
+    const res = await fetch(`${API_URL}/api/faculty/${facultyId}/reset-password`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
       body: JSON.stringify({ newPassword }),
     })
+    const data = await res.json()
 
     if (res.ok) {
       alert(`New password: ${newPassword}\n(Save this — it won't be shown again)`)
     } else {
-      alert('Failed to reset password')
+      alert(data.error || 'Failed to reset password')
     }
   }
 
-  const handleEditClick = async (id) => {
-    const res = await fetch(`${API_URL}/api/faculty/${id}`)
+  const handleEditClick = async (facultyId) => {
+    const res = await fetch(`${API_URL}/api/faculty/${facultyId}`)
     const data = await res.json()
     onEditRequest(data)
   }
+
   if (selectedFaculty) {
     const groups = [
       {
@@ -127,12 +138,12 @@ function ViewFaculty({ onEditRequest }) {
         </thead>
         <tbody>
           {filteredFaculty.map((f) => (
-            <tr key={f._id} className="hover:bg-blue-50 border-b">
-              <td className="px-4 py-2 cursor-pointer" onClick={() => handleRowClick(f._id)}>{f.FacultyID}</td>
-              <td className="px-4 py-2 cursor-pointer" onClick={() => handleRowClick(f._id)}>{f.Name}</td>
+            <tr key={f.FacultyID} className="hover:bg-blue-50 border-b">
+              <td className="px-4 py-2 cursor-pointer" onClick={() => handleRowClick(f.FacultyID)}>{f.FacultyID}</td>
+              <td className="px-4 py-2 cursor-pointer" onClick={() => handleRowClick(f.FacultyID)}>{f.Name}</td>
               <td className="px-4 py-2">
                 <button
-                  onClick={() => handleEditClick(f._id)}
+                  onClick={() => handleEditClick(f.FacultyID)}
                   className="text-blue-600 hover:underline text-sm"
                 >
                   Edit
@@ -140,7 +151,7 @@ function ViewFaculty({ onEditRequest }) {
               </td>
               <td className="px-4 py-2">
                 <button
-                  onClick={() => handleDelete(f._id)}
+                  onClick={() => handleDelete(f.FacultyID)}
                   className="text-red-600 hover:underline text-sm"
                 >
                   Delete
@@ -148,7 +159,7 @@ function ViewFaculty({ onEditRequest }) {
               </td>
               <td className="px-4 py-2">
                 <button
-                  onClick={() => handleResetPassword(f._id, f.Name)}
+                  onClick={() => handleResetPassword(f.FacultyID, f.Name)}
                   className="text-amber-600 hover:underline text-sm"
                 >
                   Reset

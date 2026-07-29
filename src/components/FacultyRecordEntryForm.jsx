@@ -18,7 +18,6 @@ function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
 
   const isEditMode = Boolean(existingFaculty)
 
-  // Pre-fill form when editing an existing faculty member
   useEffect(() => {
     if (existingFaculty) {
       setFormData({
@@ -33,7 +32,7 @@ function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
         Qualification: existingFaculty.Qualification || '',
         Experience: existingFaculty.Experience || '',
         Specialization: existingFaculty.Specialization || '',
-        Password: '', // never pre-fill password
+        Password: '',
       })
     }
   }, [existingFaculty])
@@ -55,18 +54,22 @@ function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
 
   const handleSave = async () => {
     const url = isEditMode
-      ? `${API_URL}/api/faculty/${existingFaculty._id}`
+      ? `${API_URL}/api/faculty/${existingFaculty.FacultyID}`
       : `${API_URL}/api/faculty`
     const method = isEditMode ? 'PUT' : 'POST'
 
-    // In edit mode, don't send an empty Password (backend route ignores it anyway, but cleaner not to send it)
     const payload = isEditMode
       ? { ...formData, Password: undefined }
       : formData
 
+    const headers = { 'Content-Type': 'application/json' }
+    if (isEditMode) {
+      headers['Authorization'] = `Bearer ${localStorage.getItem('token')}`
+    }
+
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     })
     const data = await res.json()
@@ -87,6 +90,9 @@ function FacultyEntryForm({ existingFaculty, onSaveComplete }) {
 
     const res = await fetch(`${API_URL}/api/faculty/upload`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
       body: uploadData,
     })
     const data = await res.json()

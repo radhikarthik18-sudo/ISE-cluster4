@@ -236,12 +236,27 @@ function LessonPlanEntry() {
                 </tbody>
               </table>
 
-              <button
-                onClick={() => addTopic(moduleIndex)}
-                className="text-blue-600 text-sm hover:underline"
-              >
-                + Add Topic
-              </button>
+              {(() => {
+                const hoursNum = Number(mod.Hours) || 0
+                const topicsCount = mod.Topics.length
+                const limitReached = hoursNum === 0 || topicsCount >= hoursNum
+
+                return (
+                  <button
+                    onClick={() => addTopic(moduleIndex)}
+                    disabled={limitReached}
+                    className={`text-sm ${
+                      limitReached
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-blue-600 hover:underline'
+                    }`}
+                  >
+                    {hoursNum === 0
+                      ? '+ Add Topic (enter Hours first)'
+                      : `+ Add Topic (${topicsCount}/${hoursNum})`}
+                  </button>
+                )
+              })()}
             </div>
           ))}
 

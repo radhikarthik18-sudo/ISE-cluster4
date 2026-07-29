@@ -8,15 +8,14 @@ function ViewStudents() {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
 
-  const filteredStudents = students
-  .filter((s) =>
-    s.USN.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-  .sort((a, b) => a.USN.localeCompare(b.USN))
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
 
+  const filteredStudents = students
+    .filter((s) => s.USN.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => a.USN.localeCompare(b.USN))
 
   useEffect(() => {
-    fetch(`${API_URL}/api/students/years`)
+    fetch(`${API_URL}/api/students/years`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setYears(data))
   }, [])
@@ -26,13 +25,13 @@ function ViewStudents() {
       setStudents([])
       return
     }
-    fetch(`${API_URL}/api/students?Year=${selectedYear}`)
+    fetch(`${API_URL}/api/students?Year=${selectedYear}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setStudents(data))
   }, [selectedYear])
 
   const handleRowClick = async (id) => {
-    const res = await fetch(`${API_URL}/api/students/${id}`)
+    const res = await fetch(`${API_URL}/api/students/${id}`, { headers: authHeaders })
     const data = await res.json()
     setSelectedStudent(data)
   }
@@ -71,13 +70,13 @@ function ViewStudents() {
                 {group.title}:
               </h3>
               {group.fields.map((field) => (
-              <div key={field} className="flex justify-between py-1.5 border-b last:border-0 text-sm">
-                <span className="font-medium text-black ">
-                  {field.replace(/([A-Z])/g, ' $1')} :
-                </span>
-                <span className="text-slate-900">{selectedStudent[field] || '—'}</span>
-              </div>
-            ))}
+                <div key={field} className="flex justify-between py-1.5 border-b last:border-0 text-sm">
+                  <span className="font-medium text-black">
+                    {field.replace(/([A-Z])/g, ' $1')} :
+                  </span>
+                  <span className="text-slate-900">{selectedStudent[field] || '—'}</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>

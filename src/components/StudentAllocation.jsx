@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { API_URL } from '../config' 
+import { API_URL } from '../config'
 
 function StudentAllocation() {
   const [years, setYears] = useState([])
@@ -9,8 +9,10 @@ function StudentAllocation() {
   const [students, setStudents] = useState([])
   const [selectedIds, setSelectedIds] = useState([])
 
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+
   useEffect(() => {
-    fetch(`${API_URL}/api/students/years`)
+    fetch(`${API_URL}/api/students/years`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setYears(data))
   }, [])
@@ -20,12 +22,12 @@ function StudentAllocation() {
       setStudents([])
       return
     }
-    fetch(`${API_URL}/api/students?Year=${selectedYear}`)
+    fetch(`${API_URL}/api/students?Year=${selectedYear}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => {
-      const sorted = [...data].sort((a, b) => a.USN.localeCompare(b.USN))
-      setStudents(sorted)
-    })
+        const sorted = [...data].sort((a, b) => a.USN.localeCompare(b.USN))
+        setStudents(sorted)
+      })
     setSelectedIds([])
   }, [selectedYear])
 
@@ -55,7 +57,10 @@ function StudentAllocation() {
 
     const res = await fetch(`${API_URL}/api/students/allocate`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
       body: JSON.stringify({ studentIds: selectedIds, Semester: semester, Section: section }),
     })
     const data = await res.json()
