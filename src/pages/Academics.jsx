@@ -5,11 +5,9 @@ import CourseStudentMap from '../components/CourseStudentMap'
 import CourseFacultyMap from '../components/CourseFacultyMap'
 import CourseFacultyTTMap from '../components/CourseFacultyTTMap'
 import AttendanceRegister from '../components/AttendanceRegister'
-import Ledger from '../components/AttendanceLedger'
 import LessonPlanUpload from '../components/LessonPlanUpload'
 import LessonPlanManual from '../components/LessonPlanManual'
 import CoursePlan from '../components/CoursePlan'
-
 import COEEntry from '../components/COEEntry'
 import COEView from '../components/COEView'
 import AttendanceLedger from '../components/AttendanceLedger'
@@ -30,7 +28,6 @@ function Academics() {
   ]
 
   const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
-  
 
   const tabsByItem = {
     attendance: [
@@ -84,6 +81,14 @@ function Academics() {
   }
 
   const currentTabs = tabsByItem[activeItem] || []
+  const currentLabel = allSidebarItems.find((item) => item.key === activeItem)?.label || ''
+
+  const tabClass = (tabKey) =>
+    `pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+      activeTab === tabKey
+        ? 'border-blue-600 text-blue-600'
+        : 'border-transparent text-slate-500 hover:text-slate-700'
+    }`
 
   return (
     <div className="flex">
@@ -93,14 +98,16 @@ function Academics() {
         onSelect={handleSidebarSelect}
       />
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-8 font-mono">
+        <h1 className="text-xl font-bold text-slate-800 mb-5">{currentLabel}</h1>
+
         {currentTabs.length > 0 && (
-          <div className="flex gap-4 border-b mb-4">
+          <div className="flex gap-6 border-b border-slate-200 mb-6 overflow-x-auto">
             {currentTabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`pb-2 px-2 ${activeTab === tab.key ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-500'}`}
+                className={tabClass(tab.key)}
               >
                 {tab.label}
               </button>

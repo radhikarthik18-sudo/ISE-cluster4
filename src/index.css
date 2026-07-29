@@ -19,3 +19,47 @@
     width: 100%;
   }
 }
+@layer components {
+  /* Cards / containers */
+  .card {
+    @apply border border-slate-200 rounded-lg p-5 bg-white shadow-sm;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-blue-600 text-white px-4 py-2 rounded font-medium hover:bg-blue-700 transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-slate-700 text-white px-4 py-2 rounded font-medium hover:bg-slate-800 transition-colors;
+  }
+  .btn-outline {
+    @apply border border-slate-400 text-slate-700 px-4 py-2 rounded font-medium hover:bg-slate-100 transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white px-4 py-2 rounded font-medium hover:bg-red-700 transition-colors;
+  }
+
+  /* Form fields */
+  .field-label {
+    @apply block text-sm font-medium mb-1 text-slate-700;
+  }
+  .field-input {
+    @apply border border-slate-300 px-3 py-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-400 transition-shadow;
+  }
+
+  /* Tables */
+  .table-wrap {
+    @apply w-full border-collapse bg-white shadow-sm rounded-lg overflow-hidden;
+  }
+  .table-head-row {
+    @apply bg-slate-800 text-white text-left text-sm;
+  }
+  .table-row {
+    @apply border-b border-slate-100 hover:bg-blue-50 transition-colors;
+  }
+
+  /* Section heading inside a card */
+  .section-title {
+    @apply text-base font-semibold text-slate-800 border-b border-slate-200 pb-2 mb-4;
+  }
+}

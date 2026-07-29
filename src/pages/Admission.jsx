@@ -8,10 +8,22 @@ function Admission() {
   const [activeItem, setActiveItem] = useState('studentEnrollment')
   const [activeTab, setActiveTab] = useState('entry')
 
-  const sidebarItems = [
-    { key: 'studentEnrollment', label: 'Student Enrollment' },
-    { key: 'studentList', label: 'Student List' },
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const roles = user.Roles || []
+  const hasAnyRole = (allowedRoles) => allowedRoles.some((r) => roles.includes(r))
+
+  const allSidebarItems = [
+    { key: 'studentEnrollment', label: 'Student Enrollment', allowedRoles: ['Admin', 'StudentCoordinator'] },
+    { key: 'studentList', label: 'Student List', allowedRoles: ['Admin', 'StudentCoordinator'] },
   ]
+  const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
+
+  const tabClass = (tab) =>
+    `pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors ${
+      activeTab === tab
+        ? 'border-blue-600 text-blue-600'
+        : 'border-transparent text-slate-500 hover:text-slate-700'
+    }`
 
   return (
     <div className="flex">
@@ -21,19 +33,21 @@ function Admission() {
         onSelect={setActiveItem}
       />
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-8 font-mono">
         {activeItem === 'studentEnrollment' && (
           <div>
-            <div className="flex gap-4 border-b mb-4">
+            <h1 className="text-xl font-bold text-slate-800 mb-5">Student Enrollment</h1>
+
+            <div className="flex gap-6 border-b border-slate-200 mb-6">
               <button
                 onClick={() => setActiveTab('entry')}
-                className={`pb-2 px-2 ${activeTab === 'entry' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-500'}`}
+                className={tabClass('entry')}
               >
                 Entry
               </button>
               <button
                 onClick={() => setActiveTab('view')}
-                className={`pb-2 px-2 ${activeTab === 'view' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-500'}`}
+                className={tabClass('view')}
               >
                 View
               </button>
@@ -46,11 +60,14 @@ function Admission() {
 
         {activeItem === 'studentList' && (
           <div>
-            <div className="flex gap-4 border-b mb-4">
-              <button className="pb-2 px-2 border-b-2 border-blue-600 font-semibold">
+            <h1 className="text-xl font-bold text-slate-800 mb-5">Student List</h1>
+
+            <div className="flex gap-6 border-b border-slate-200 mb-6">
+              <span className="pb-2.5 px-1 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
                 Allocation
-              </button>
+              </span>
             </div>
+
             <StudentAllocation />
           </div>
         )}

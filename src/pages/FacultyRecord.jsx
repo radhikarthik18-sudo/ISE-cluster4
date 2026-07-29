@@ -8,10 +8,15 @@ function Faculty() {
   const [activeTab, setActiveTab] = useState('entry')
   const [editingFaculty, setEditingFaculty] = useState(null)
 
-  const sidebarItems = [
-    { key: 'facultyRecords', label: 'Faculty Records' },
-    { key: 'proctorAllotment', label: 'Proctor Allotment' },
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const roles = user.Roles || []
+  const hasAnyRole = (allowedRoles) => allowedRoles.some((r) => roles.includes(r))
+
+  const allSidebarItems = [
+    { key: 'facultyRecords', label: 'Faculty Records', allowedRoles: ['Admin'] },
+    { key: 'proctorAllotment', label: 'Proctor Allotment', allowedRoles: ['Admin', 'ProctorCoordinator'] },
   ]
+  const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
 
   const handleEditRequest = (facultyRecord) => {
     setEditingFaculty(facultyRecord)
@@ -23,26 +28,35 @@ function Faculty() {
     setActiveTab('view')
   }
 
+  const tabClass = (tab) =>
+    `pb-2.5 px-1 text-sm font-medium border-b-2 transition-colors ${
+      activeTab === tab
+        ? 'border-blue-600 text-blue-600'
+        : 'border-transparent text-slate-500 hover:text-slate-700'
+    }`
+
   return (
     <div className="flex">
       <Sidebar items={sidebarItems} activeItem={activeItem} onSelect={setActiveItem} />
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-8 font-mono">
         {activeItem === 'facultyRecords' && (
           <div>
-            <div className="flex gap-4 border-b mb-4">
+            <h1 className="text-xl font-bold text-slate-800 mb-5">Faculty Records</h1>
+
+            <div className="flex gap-6 border-b border-slate-200 mb-6">
               <button
                 onClick={() => {
                   setActiveTab('entry')
                   setEditingFaculty(null)
                 }}
-                className={`pb-2 px-2 ${activeTab === 'entry' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-500'}`}
+                className={tabClass('entry')}
               >
                 New Faculty
               </button>
               <button
                 onClick={() => setActiveTab('view')}
-                className={`pb-2 px-2 ${activeTab === 'view' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-500'}`}
+                className={tabClass('view')}
               >
                 All Faculty
               </button>
@@ -58,7 +72,12 @@ function Faculty() {
           </div>
         )}
 
-        {activeItem === 'proctorAllotment' && <p>Proctor Allotment coming soon</p>}
+        {activeItem === 'proctorAllotment' && (
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 mb-5">Proctor Allotment</h1>
+            <p className="text-sm text-slate-500">Coming soon.</p>
+          </div>
+        )}
       </div>
     </div>
   )
