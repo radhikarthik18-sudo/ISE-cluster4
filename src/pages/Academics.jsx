@@ -11,6 +11,10 @@ import CoursePlan from '../components/CoursePlan'
 import COEEntry from '../components/COEEntry'
 import COEView from '../components/COEView'
 import AttendanceLedger from '../components/AttendanceLedger'
+import COAllocation from '../components/COAllocation'
+import COPOMapping from '../components/COPOMapping'
+
+
 
 function Academics() {
   const [activeItem, setActiveItem] = useState('courses')
@@ -20,16 +24,22 @@ function Academics() {
   const hasAnyRole = (allowedRoles) => allowedRoles.some((r) => roles.includes(r))
 
   const allSidebarItems = [
-    { key: 'attendance', label: 'Attendance', allowedRoles: ['Admin', 'HOD', 'Faculty', 'AcademicCoordinator'] },
-    { key: 'courses', label: 'Courses', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
-    { key: 'lessonPlan', label: 'Lesson Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'AcademicCoordinator'] },
-    { key: 'coursePlan', label: 'Course Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'AcademicCoordinator'] },
     { key: 'departmentCOE', label: 'Department COE', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
+    { key: 'courses', label: 'Courses', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
+    { key: 'copomapping', label: 'CO - PO mapping', allowedRoles: ['Admin', 'HOD', 'ChiefCourseCoordinator'] },
+    { key: 'lessonPlan', label: 'Lesson Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
+    { key: 'attendance', label: 'Attendance', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
+    { key: 'coursePlan', label: 'Course Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
+    
   ]
 
   const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
 
   const tabsByItem = {
+    copomapping: [
+      { key: 'coAllocation', label: 'CO Allotment'},
+      { key: 'copoMappingTab', label: 'CO-PO Mapping'},
+    ],
     attendance: [
       { key: 'register', label: 'Attendance Register' },
       { key: 'ledger', label: 'Ledger' },
@@ -63,6 +73,10 @@ function Academics() {
       if (activeTab === 'courseStudentMap') return <CourseStudentMap />
       if (activeTab === 'courseFacultyMap') return <CourseFacultyMap />
       if (activeTab === 'courseFacultyTTMap') return <CourseFacultyTTMap />
+    }
+    if (activeItem === 'copomapping') {
+      if (activeTab === 'coAllocation') return <COAllocation />
+      if (activeTab === 'copoMappingTab') return <COPOMapping />
     }
     if (activeItem === 'attendance') {
       if (activeTab === 'register') return <AttendanceRegister />
