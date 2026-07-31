@@ -12,21 +12,36 @@ function LessonPlanEntry() {
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [modules, setModules] = useState([])
 
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+
   useEffect(() => {
-    fetch(`${API_URL}/api/courses`)
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+
+    fetch(`${API_URL}/api/course-faculty-map/by-faculty/${user.FacultyID}`, { headers: authHeaders })
       .then((res) => res.json())
-      .then((data) => setCourses(data))
+      .then((data) => {
+        // A faculty may teach the same course to multiple sections —
+        // dedupe down to unique CourseCode/CourseTitle pairs for this dropdown
+        const seen = new Set()
+        const uniqueCourses = []
+        data.forEach((m) => {
+          if (!seen.has(m.CourseCode)) {
+            seen.add(m.CourseCode)
+            uniqueCourses.push({ CourseCode: m.CourseCode, CourseTitle: m.CourseTitle })
+          }
+        })
+        setCourses(uniqueCourses)
+      })
 
     loadPlanList()
   }, [])
 
   const loadPlanList = () => {
-    fetch(`${API_URL}/api/lesson-plan`)
+    fetch(`${API_URL}/api/lesson-plan`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setPlans(data))
   }
 
-  // Loading an existing plan for editing
   useEffect(() => {
     if (!selectedPlanId) {
       setSelectedCourseId('')
@@ -34,7 +49,7 @@ function LessonPlanEntry() {
       setModules([])
       return
     }
-    fetch(`${API_URL}/api/lesson-plan/${selectedPlanId}`)
+    fetch(`${API_URL}/api/lesson-plan/${selectedPlanId}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => {
         setModules(data.Modules || [])
@@ -47,10 +62,9 @@ function LessonPlanEntry() {
       setSelectedCourse(null)
       return
     }
-    fetch(`${API_URL}/api/courses/${selectedCourseId}`)
-      .then((res) => res.json())
-      .then((data) => setSelectedCourse(data))
-  }, [selectedCourseId])
+    const found = courses.find((c) => c.CourseCode === selectedCourseId)
+    setSelectedCourse(found || null)
+  }, [selectedCourseId, courses])
 
   const addModule = () => {
     setModules((prev) => [
@@ -116,7 +130,7 @@ function LessonPlanEntry() {
 
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify({
         CourseCode: selectedCourse.CourseCode,
         CourseTitle: selectedCourse.CourseTitle,
@@ -160,7 +174,7 @@ function LessonPlanEntry() {
           >
             <option value="">-- Select --</option>
             {courses.map((c) => (
-              <option key={c._id} value={c._id}>{c.CourseCode}</option>
+              <option key={c.CourseCode} value={c.CourseCode}>{c.CourseCode}</option>
             ))}
           </select>
         </div>

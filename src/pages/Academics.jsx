@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Sidebar from '../components/sidebar'
-import CourseList from '../components/CourseList'
+import CourseListPage from '../components/CourseListPage'
 import CourseStudentMap from '../components/CourseStudentMap'
 import CourseFacultyMap from '../components/CourseFacultyMap'
 import CourseFacultyTTMap from '../components/CourseFacultyTTMap'
@@ -13,7 +13,9 @@ import COEView from '../components/COEView'
 import AttendanceLedger from '../components/AttendanceLedger'
 import COAllocation from '../components/COAllocation'
 import COPOMapping from '../components/COPOMapping'
-
+import TimeTableEntry from '../components/TimeTableEntry'
+import FacultyTimeTableView from '../components/FacultyTimeTableView'
+import TTView from '../components/TTView'
 
 
 function Academics() {
@@ -22,9 +24,11 @@ function Academics() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const roles = user.Roles || []
   const hasAnyRole = (allowedRoles) => allowedRoles.some((r) => roles.includes(r))
+  const canEditTimetable = hasAnyRole(['Admin', 'HOD', 'AcademicCoordinator'])
 
   const allSidebarItems = [
     { key: 'departmentCOE', label: 'Department COE', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
+    { key: 'timetable', label: 'Time Table', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator', 'Faculty', 'ChiefCourseCoordinator'] },
     { key: 'courses', label: 'Courses', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
     { key: 'copomapping', label: 'CO - PO mapping', allowedRoles: ['Admin', 'HOD', 'ChiefCourseCoordinator'] },
     { key: 'lessonPlan', label: 'Lesson Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
@@ -59,6 +63,11 @@ function Academics() {
       { key: 'entry', label: 'Entry' },
       { key: 'view', label: 'View' },
     ],
+    timetable: [
+      ...(canEditTimetable ? [{ key: 'sectionView', label: 'Section View' }] : []),
+      { key: 'facultyView', label: 'Faculty View' },
+      ...(canEditTimetable ? [{ key: 'ttView', label: 'TT View' }] : []),
+    ],
   }
 
   const handleSidebarSelect = (key) => {
@@ -69,7 +78,7 @@ function Academics() {
 
   const renderContent = () => {
     if (activeItem === 'courses') {
-      if (activeTab === 'courseList') return <CourseList />
+      if (activeTab === 'courseList') return <CourseListPage />
       if (activeTab === 'courseStudentMap') return <CourseStudentMap />
       if (activeTab === 'courseFacultyMap') return <CourseFacultyMap />
       if (activeTab === 'courseFacultyTTMap') return <CourseFacultyTTMap />
@@ -90,6 +99,11 @@ function Academics() {
     if (activeItem === 'departmentCOE') {
       if (activeTab === 'entry') return <COEEntry />
       if (activeTab === 'view') return <COEView />
+    }
+    if (activeItem === 'timetable') {
+      if (activeTab === 'sectionView' && canEditTimetable) return <TimeTableEntry />
+      if (activeTab === 'facultyView') return <FacultyTimeTableView />
+      if (activeTab === 'ttView' && canEditTimetable) return <TTView />
     }
     return null
   }

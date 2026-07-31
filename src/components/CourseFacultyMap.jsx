@@ -16,12 +16,14 @@ function CourseFacultyMap() {
 
   const [showList, setShowList] = useState(false)
 
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+
   useEffect(() => {
-    fetch(`${API_URL}/api/courses`)
+    fetch(`${API_URL}/api/courses`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setCourses(data))
 
-    fetch(`${API_URL}/api/faculty`)
+    fetch(`${API_URL}/api/faculty?status=all`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setFacultyList(data))
   }, [])
@@ -31,24 +33,22 @@ function CourseFacultyMap() {
       setSelectedCourse(null)
       return
     }
-    fetch(`${API_URL}/api/courses/${selectedCourseId}`)
+    fetch(`${API_URL}/api/courses/${selectedCourseId}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setSelectedCourse(data))
   }, [selectedCourseId])
 
-  // Check for an existing mapping whenever Course + Section are both chosen
   useEffect(() => {
     if (!selectedCourse || !section) {
       setExistingMapping(null)
       return
     }
-    fetch(`${API_URL}/api/course-faculty-map/lookup?CourseCode=${selectedCourse.CourseCode}&Section=${section}`)
+    fetch(`${API_URL}/api/course-faculty-map/lookup?CourseCode=${selectedCourse.CourseCode}&Section=${section}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => {
         setExistingMapping(data)
         if (data) {
-          const match = facultyList.find((f) => f.FacultyID === data.FacultyID)
-          setSelectedFacultyId(match ? match._id : '')
+          setSelectedFacultyId(data.FacultyID)
         }
       })
   }, [selectedCourse, section, facultyList])
@@ -58,7 +58,7 @@ function CourseFacultyMap() {
       setSelectedFaculty(null)
       return
     }
-    fetch(`${API_URL}/api/faculty/${selectedFacultyId}`)
+    fetch(`${API_URL}/api/faculty/${selectedFacultyId}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setSelectedFaculty(data))
   }, [selectedFacultyId])
@@ -83,7 +83,7 @@ function CourseFacultyMap() {
       }
       const res = await fetch(`${API_URL}/api/course-faculty-map/${existingMapping._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           FacultyID: selectedFaculty.FacultyID,
           FacultyName: selectedFaculty.Name,
@@ -98,10 +98,11 @@ function CourseFacultyMap() {
     } else {
       const res = await fetch(`${API_URL}/api/course-faculty-map`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           CourseCode: selectedCourse.CourseCode,
           CourseTitle: selectedCourse.CourseTitle,
+          Initial: selectedCourse.Initial,
           Section: section,
           FacultyID: selectedFaculty.FacultyID,
           FacultyName: selectedFaculty.Name,
@@ -181,7 +182,7 @@ function CourseFacultyMap() {
           >
             <option value="">-- Select --</option>
             {facultyList.map((f) => (
-              <option key={f._id} value={f._id}>{f.Name} ({f.FacultyID})</option>
+              <option key={f.FacultyID} value={f.FacultyID}>{f.Name} ({f.FacultyID})</option>
             ))}
           </select>
         </div>

@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import CourseListView from './CourseListView'
+import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
-function CourseList() {
+
+function CourseList({ existingCourse, onSaveComplete }) {
   const [formData, setFormData] = useState({
     CourseCategory: '',
     CourseCode: '',
     CourseTitle: '',
+    Initial: '',
     Semester: '',
     L: '',
     T: '',
@@ -13,22 +14,61 @@ function CourseList() {
     S: '',
     Credits: '',
   })
-  const [showList, setShowList] = useState(false)
+  const [syllabusFile, setSyllabusFile] = useState(null)
+
+  const isEditMode = Boolean(existingCourse)
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
 
   const categories = ['HSMC', 'IPCC', 'PCC', 'PCCL', 'PEC', 'PW', 'AEC', 'MC', 'NCMC']
   const hourOptions = [0, 1, 2, 3, 4]
   const creditOptions = [1, 2, 3, 4]
+
+  useEffect(() => {
+    if (existingCourse) {
+      setFormData({
+        CourseCategory: existingCourse.CourseCategory || '',
+        CourseCode: existingCourse.CourseCode || '',
+        CourseTitle: existingCourse.CourseTitle || '',
+        Initial: existingCourse.Initial || '',
+        Semester: existingCourse.Semester || '',
+        L: existingCourse.L || '',
+        T: existingCourse.T || '',
+        P: existingCourse.P || '',
+        S: existingCourse.S || '',
+        Credits: existingCourse.Credits || '',
+      })
+    }
+  }, [existingCourse])
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const handleSyllabusChange = (e) => {
+    const file = e.target.files[0]
+    if (file && file.type !== 'application/pdf') {
+      alert('Please select a PDF file')
+      e.target.value = ''
+      return
+    }
+    setSyllabusFile(file || null)
+  }
+
   const handleSave = async () => {
-    const res = await fetch(`${API_URL}/api/courses`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
+    const payload = new FormData()
+    Object.entries(formData).forEach(([key, value]) => payload.append(key, value))
+    if (syllabusFile) {
+      payload.append('SyllabusPDF', syllabusFile)
+    }
+
+    const url = isEditMode ? `${API_URL}/api/courses/${existingCourse._id}` : `${API_URL}/api/courses`
+    const method = isEditMode ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: authHeaders,
+      body: payload,
     })
     const data = await res.json()
 
@@ -36,11 +76,17 @@ function CourseList() {
       alert(data.error || 'Failed to save course')
       return
     }
-    alert('Course saved!')
-    setFormData({
-      CourseCategory: '', CourseCode: '', CourseTitle: '', Semester: '',
-      L: '', T: '', P: '', S: '', Credits: '',
-    })
+    alert(isEditMode ? 'Course updated!' : 'Course saved!')
+
+    if (isEditMode) {
+      if (onSaveComplete) onSaveComplete()
+    } else {
+      setFormData({
+        CourseCategory: '', CourseCode: '', CourseTitle: '', Initial: '', Semester: '',
+        L: '', T: '', P: '', S: '', Credits: '',
+      })
+      setSyllabusFile(null)
+    }
   }
 
   return (
@@ -70,7 +116,8 @@ function CourseList() {
               name="CourseCode"
               value={formData.CourseCode}
               onChange={handleChange}
-              className="border px-2 py-1 rounded w-full"
+              disabled={isEditMode}
+              className="border px-2 py-1 rounded w-full disabled:bg-gray-100"
             />
           </div>
           <div>
@@ -83,6 +130,20 @@ function CourseList() {
               className="border px-2 py-1 rounded w-full"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">
+            Initial <span className="text-xs text-gray-400 font-normal">(short code shown on compact timetable views, e.g. INS, PC, PE)</span>
+          </label>
+          <input
+            type="text"
+            name="Initial"
+            value={formData.Initial}
+            onChange={handleChange}
+            maxLength={6}
+            className="border px-2 py-1 rounded w-32"
+          />
         </div>
 
         <div>
@@ -137,6 +198,21 @@ function CourseList() {
           </select>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">
+            Syllabus (ONLY PDF) {isEditMode && <span className="text-xs text-gray-400 font-normal">— leave blank to keep existing file</span>}
+          </label>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleSyllabusChange}
+            className="block text-sm border rounded px-2 py-1.5 w-full"
+          />
+          {syllabusFile && (
+            <p className="text-xs text-slate-500 mt-1">Selected: {syllabusFile.name}</p>
+          )}
+        </div>
+
       </div>
 
       <div className="flex gap-3 mt-4">
@@ -144,22 +220,9 @@ function CourseList() {
           onClick={handleSave}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Save
-        </button>
-
-        <button
-          onClick={() => setShowList((prev) => !prev)}
-          className="bg-slate-700 text-white px-4 py-2 rounded hover:bg-slate-800"
-        >
-          {showList ? 'Hide List' : 'View'}
+          {isEditMode ? 'Update' : 'Save'}
         </button>
       </div>
-
-      {showList && (
-        <div className="mt-6">
-          <CourseListView />
-        </div>
-      )}
     </div>
   )
 }

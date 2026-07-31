@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { API_URL } from '../config'
+import * as XLSX from 'xlsx'
 
 function EntryForm() {
   const [Year, setYear] = useState('')
@@ -82,7 +83,19 @@ function EntryForm() {
       fields: ['MotherName', 'MotherOccupation', 'MotherCompany', 'MotherDesignation', 'MotherEmail', 'MotherPhone'],
     },
   ]
-
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'USN', 'Student Name', 'Student Email Address', 'Student Ph. no.',
+      "Father's Name", "Father's Occupation", "Father's Company Name",
+      "Father's Designation and Role", "Father's Email ID", "Father's Phone No",
+      "Mother's Name", "Mother's Occupation", "Mother's Company",
+      "Mother's Designation and Role 2", "Mother's Email ID", "Mother's Phone Number",
+    ]
+    const worksheet = XLSX.utils.aoa_to_sheet([headers])
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students')
+    XLSX.writeFile(workbook, 'student_enrollment_template.xlsx')
+  }
   return (
     <div className="w-full font-mono">
       <div className="flex flex-wrap items-center gap-6 mb-6 p-4 bg-slate-50 rounded-lg border">
@@ -96,7 +109,12 @@ function EntryForm() {
             placeholder="e.g. 2025"
           />
         </div>
-
+        <button
+          onClick={handleDownloadTemplate}
+          className="bg-slate-600 text-white px-3 py-1 rounded hover:bg-slate-700 text-sm whitespace-nowrap"
+        >
+          Download Template
+        </button>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-600 whitespace-nowrap">
             If you have an excel sheet, upload here:

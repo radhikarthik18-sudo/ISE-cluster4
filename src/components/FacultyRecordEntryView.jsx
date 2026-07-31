@@ -5,12 +5,18 @@ function ViewFaculty({ onEditRequest }) {
   const [facultyList, setFacultyList] = useState([])
   const [selectedFaculty, setSelectedFaculty] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  const [editingRolesFor, setEditingRolesFor] = useState(null)   // FacultyID currently being edited
+  const [tempRoles, setTempRoles] = useState([])
+  const ALL_ROLES = ['Principal', 'Admin', 'HOD', 'Faculty', 'StudentCoordinator', 'PlacementCoordinator', 'AcademicCoordinator', 'ProctorCoordinator', 'ChiefCourseCoordinator']
 
   useEffect(() => {
-    fetch(`${API_URL}/api/faculty`)
+    const status = showInactive ? 'inactive' : 'active'
+    fetch(`${API_URL}/api/faculty?status=${status}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setFacultyList(data))
-  }, [])
+  }, [showInactive])
 
   const filteredFaculty = facultyList
     .filter((f) => f.Name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -21,25 +27,46 @@ function ViewFaculty({ onEditRequest }) {
     const data = await res.json()
     setSelectedFaculty(data)
   }
+  const handleReactivate = async (facultyId, name) => {
+  const confirmed = window.confirm(`Reactivate ${name}?`)
+  if (!confirmed) return
 
-  const handleDelete = async (facultyId) => {
-    const confirmed = window.confirm('Are you sure you want to delete this faculty member?')
-    if (!confirmed) return
+  const res = await fetch(`${API_URL}/api/faculty/${facultyId}/reactivate`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  })
+  const data = await res.json()
 
-    const res = await fetch(`${API_URL}/api/faculty/${facultyId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-    })
-    const data = await res.json()
-
-    if (res.ok) {
-      setFacultyList((prev) => prev.filter((f) => f.FacultyID !== facultyId))
-    } else {
-      alert(data.error || 'Failed to delete')
-    }
+  if (res.ok) {
+    setFacultyList((prev) => prev.filter((f) => f.FacultyID !== facultyId))
+    alert('Faculty reactivated')
+  } else {
+    alert(data.error || 'Failed to reactivate')
   }
+}
+  const handleDeactivate = async (facultyId, name) => {
+  const remarks = window.prompt(`Enter a reason for deactivating ${name}:`)
+  if (remarks === null) return   // user clicked Cancel
+
+  const res = await fetch(`${API_URL}/api/faculty/${facultyId}/deactivate`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    body: JSON.stringify({ remarks }),
+  })
+  const data = await res.json()
+
+  if (res.ok) {
+    setFacultyList((prev) => prev.filter((f) => f.FacultyID !== facultyId))
+    alert('Faculty deactivated')
+  } else {
+    alert(data.error || 'Failed to deactivate')
+  }
+}
 
   const handleResetPassword = async (facultyId, name) => {
     const confirmed = window.confirm(`Generate a new password for ${name}?`)
@@ -71,7 +98,34 @@ function ViewFaculty({ onEditRequest }) {
     const data = await res.json()
     onEditRequest(data)
   }
+  const startEditingRoles = (facultyId, currentRoles) => {
+  setEditingRolesFor(facultyId)
+  setTempRoles(currentRoles && currentRoles.length ? currentRoles : ['Faculty'])
+}
 
+const toggleTempRole = (role) => {
+  setTempRoles((prev) =>
+    prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+  )
+}
+
+const saveRoles = async (facultyId) => {
+  const res = await fetch(`${API_URL}/api/faculty/${facultyId}/roles`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
+    body: JSON.stringify({ Roles: tempRoles }),
+  })
+  const data = await res.json()
+
+  if (res.ok) {
+    setFacultyList((prev) =>
+      prev.map((f) => (f.FacultyID === facultyId ? { ...f, Roles: tempRoles } : f))
+    )
+    setEditingRolesFor(null)
+  } else {
+    alert(data.error || 'Failed to update roles')
+  }
+}
   if (selectedFaculty) {
     const groups = [
       {
@@ -118,6 +172,12 @@ function ViewFaculty({ onEditRequest }) {
 
   return (
     <div>
+      <button
+        onClick={() => setShowInactive((prev) => !prev)}
+        className="btn-outline text-sm mb-4"
+      >
+        {showInactive ? 'Show Active Faculty' : 'Show Deactivated Faculty'}
+      </button>
       <input
         type="text"
         placeholder="Search by Name..."
@@ -132,7 +192,8 @@ function ViewFaculty({ onEditRequest }) {
             <th className="px-4 py-2">Faculty ID</th>
             <th className="px-4 py-2">Name</th>
             <th className="px-4 py-2">Edit</th>
-            <th className="px-4 py-2">Delete</th>
+            <th className="px-4 py-2">Roles</th>
+            <th className="px-4 py-2">Deactivate</th>
             <th className="px-4 py-2">Reset Password</th>
           </tr>
         </thead>
@@ -150,12 +211,65 @@ function ViewFaculty({ onEditRequest }) {
                 </button>
               </td>
               <td className="px-4 py-2">
-                <button
-                  onClick={() => handleDelete(f.FacultyID)}
-                  className="text-red-600 hover:underline text-sm"
-                >
-                  Delete
-                </button>
+                {editingRolesFor === f.FacultyID ? (
+                  <div className="flex flex-col gap-1 bg-slate-50 p-2 rounded border">
+                    {ALL_ROLES.map((role) => (
+                      <label key={role} className="flex items-center gap-2 text-xs">
+                        <input
+                          type="checkbox"
+                          checked={tempRoles.includes(role)}
+                          onChange={() => toggleTempRole(role)}
+                        />
+                        {role}
+                      </label>
+                    ))}
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        onClick={() => saveRoles(f.FacultyID)}
+                        className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingRolesFor(null)}
+                        className="text-xs border px-2 py-0.5 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-1 items-center">
+                    {(f.Roles && f.Roles.length ? f.Roles : ['Faculty']).map((role) => (
+                      <span key={role} className="text-xs bg-slate-200 px-2 py-0.5 rounded-full">
+                        {role}
+                      </span>
+                    ))}
+                    <button
+                      onClick={() => startEditingRoles(f.FacultyID, f.Roles)}
+                      className="text-xs text-blue-600 hover:underline ml-1"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
+              </td>
+              <td className="px-4 py-2">
+                {showInactive ? (
+                  <button
+                    onClick={() => handleReactivate(f.FacultyID, f.Name)}
+                    className="text-green-600 hover:underline text-sm"
+                  >
+                    Reactivate
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleDeactivate(f.FacultyID, f.Name)}
+                    className="text-red-600 hover:underline text-sm"
+                  >
+                    Deactivate
+                  </button>
+                )}
               </td>
               <td className="px-4 py-2">
                 <button

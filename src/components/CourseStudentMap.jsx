@@ -7,8 +7,10 @@ function CourseStudentMap() {
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [students, setStudents] = useState([])
 
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+
   useEffect(() => {
-    fetch(`${API_URL}/api/courses`)
+    fetch(`${API_URL}/api/courses`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setCourses(data))
   }, [])
@@ -18,7 +20,7 @@ function CourseStudentMap() {
       setSelectedCourse(null)
       return
     }
-    fetch(`${API_URL}/api/courses/${selectedCourseId}`)
+    fetch(`${API_URL}/api/courses/${selectedCourseId}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setSelectedCourse(data))
   }, [selectedCourseId])
@@ -28,8 +30,7 @@ function CourseStudentMap() {
       setStudents([])
       return
     }
-    console.log('Fetching students for semester:', selectedCourse.Semester)
-    fetch(`${API_URL}/api/students/by-semester/list?Semester=${selectedCourse.Semester}`)
+    fetch(`${API_URL}/api/students/by-semester/list?Semester=${selectedCourse.Semester}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => {
         const sorted = [...data].sort((a, b) => a.USN.localeCompare(b.USN))

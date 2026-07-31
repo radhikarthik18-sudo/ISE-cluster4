@@ -4,8 +4,10 @@ import { API_URL } from '../config'
 function CourseFacultyMapView() {
   const [mappings, setMappings] = useState([])
 
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+
   const fetchMappings = () => {
-    fetch(`${API_URL}/api/course-faculty-map`)
+    fetch(`${API_URL}/api/course-faculty-map`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setMappings(data))
   }
@@ -22,6 +24,7 @@ function CourseFacultyMapView() {
 
     const res = await fetch(`${API_URL}/api/course-faculty-map/${id}`, {
       method: 'DELETE',
+      headers: authHeaders,
     })
     if (res.ok) {
       setMappings((prev) => prev.filter((m) => m._id !== id))
