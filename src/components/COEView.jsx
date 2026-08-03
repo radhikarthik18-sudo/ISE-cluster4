@@ -84,13 +84,13 @@ function COEView() {
 
           <div className="flex border-b border-slate-300">
             <div className="bg-green-700 text-white font-semibold px-2 py-1 w-40 shrink-0 flex items-center">
-              VISION OF THE INSTITUTE
+              VISION OF THE DEPARTMENT
             </div>
             <div className="px-2 py-1 flex-1 bg-green-50 flex items-center">{doc.Vision}</div>
           </div>
           <div className="flex border-b-2 border-slate-800">
             <div className="bg-orange-600 text-white font-semibold px-2 py-1 w-40 shrink-0 flex items-center">
-              MISSION OF THE INSTITUTE
+              MISSION OF THE DEPARTMENT
             </div>
             <div className="px-2 py-1 flex-1 bg-orange-50 flex items-center">{doc.Mission}</div>
           </div>
