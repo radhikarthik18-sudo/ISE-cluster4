@@ -3,6 +3,7 @@ import Sidebar from '../components/sidebar'
 import EntryForm from '../components/StudentEntryForm'
 import ViewStudents from '../components/StudentEntryView'
 import StudentAllocation from '../components/StudentAllocation'
+import StudentAllocationView from '../components/StudentAllocationView'
 
 function Admission() {
   const [activeItem, setActiveItem] = useState('studentEnrollment')
@@ -24,13 +25,16 @@ function Admission() {
         ? 'border-blue-600 text-blue-600'
         : 'border-transparent text-slate-500 hover:text-slate-700'
     }`
-
+  const handleSidebarSelect = (key) => {
+    setActiveItem(key)
+    setActiveTab(key === 'studentEnrollment' ? 'entry' : 'allocate')
+  }
   return (
     <div className="flex">
       <Sidebar
         items={sidebarItems}
         activeItem={activeItem}
-        onSelect={setActiveItem}
+        onSelect={handleSidebarSelect}
       />
 
       <div className="flex-1 p-8 font-mono">
@@ -63,12 +67,22 @@ function Admission() {
             <h1 className="text-xl font-bold text-slate-800 mb-5">Student List</h1>
 
             <div className="flex gap-6 border-b border-slate-200 mb-6">
-              <span className="pb-2.5 px-1 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
+              <button
+                onClick={() => setActiveTab('allocate')}
+                className={tabClass('allocate')}
+              >
                 Allocation
-              </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('viewAllocation')}
+                className={tabClass('viewAllocation')}
+              >
+                View
+              </button>
             </div>
 
-            <StudentAllocation />
+            {activeTab === 'allocate' && <StudentAllocation />}
+            {activeTab === 'viewAllocation' && <StudentAllocationView />}
           </div>
         )}
       </div>

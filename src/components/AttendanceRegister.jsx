@@ -3,6 +3,7 @@ import { API_URL } from '../config'
 
 function AttendanceRegister() {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const authHeaders = { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
 
   const [myMappings, setMyMappings] = useState([])
   const [selectedMappingId, setSelectedMappingId] = useState('')
@@ -17,9 +18,8 @@ function AttendanceRegister() {
   const [pastRecords, setPastRecords] = useState([])
   const [marks, setMarks] = useState({})
 
-  // Load only THIS faculty's assigned Course+Section combinations
   useEffect(() => {
-    fetch(`${API_URL}/api/course-faculty-map/by-faculty/${user.FacultyID}`)
+    fetch(`${API_URL}/api/course-faculty-map/by-faculty/${user.FacultyID}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setMyMappings(data))
   }, [])
@@ -29,19 +29,18 @@ function AttendanceRegister() {
     setSelectedMapping(found || null)
   }, [selectedMappingId, myMappings])
 
-  // Load the course's own details (needed for Semester, used in roster lookup)
   const [courseDetails, setCourseDetails] = useState(null)
   useEffect(() => {
     if (!selectedMapping) {
       setCourseDetails(null)
       return
     }
-    fetch(`${API_URL}/api/courses`)
+    fetch(`${API_URL}/api/courses`, { headers: authHeaders })
       .then((res) => res.json())
       .then((courses) => {
         const match = courses.find((c) => c.CourseCode === selectedMapping.CourseCode)
         if (match) {
-          fetch(`${API_URL}/api/courses/${match._id}`)
+          fetch(`${API_URL}/api/courses/${match._id}`, { headers: authHeaders })
             .then((res) => res.json())
             .then((data) => setCourseDetails(data))
         }
@@ -53,7 +52,7 @@ function AttendanceRegister() {
       setLessonPlan(null)
       return
     }
-    fetch(`${API_URL}/api/lesson-plan/by-course/${selectedMapping.CourseCode}`)
+    fetch(`${API_URL}/api/lesson-plan/by-course/${selectedMapping.CourseCode}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setLessonPlan(data))
   }, [selectedMapping])
@@ -63,7 +62,7 @@ function AttendanceRegister() {
       setStudents([])
       return
     }
-    fetch(`${API_URL}/api/students/by-semester/list?Semester=${courseDetails.Semester}`)
+    fetch(`${API_URL}/api/students/by-semester/list?Semester=${courseDetails.Semester}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => {
         const inSection = data.filter((s) => s.Section === selectedMapping.Section)
@@ -80,7 +79,7 @@ function AttendanceRegister() {
       setPastRecords([])
       return
     }
-    fetch(`${API_URL}/api/attendance?CourseCode=${selectedMapping.CourseCode}&Section=${selectedMapping.Section}`)
+    fetch(`${API_URL}/api/attendance?CourseCode=${selectedMapping.CourseCode}&Section=${selectedMapping.Section}`, { headers: authHeaders })
       .then((res) => res.json())
       .then((data) => setPastRecords(data))
   }, [selectedMapping])
@@ -127,7 +126,7 @@ function AttendanceRegister() {
 
     const res = await fetch(`${API_URL}/api/attendance`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders },
       body: JSON.stringify(payload),
     })
     const data = await res.json()

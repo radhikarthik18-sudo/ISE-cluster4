@@ -16,7 +16,8 @@ import COPOMapping from '../components/COPOMapping'
 import TimeTableEntry from '../components/TimeTableEntry'
 import FacultyTimeTableView from '../components/FacultyTimeTableView'
 import TTView from '../components/TTView'
-
+import ClassTeacherEntry from '../components/ClassTeacherEntry'
+import ClassTeacherView from '../components/ClassTeacherView'
 
 function Academics() {
   const [activeItem, setActiveItem] = useState('courses')
@@ -34,7 +35,7 @@ function Academics() {
     { key: 'lessonPlan', label: 'Lesson Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
     { key: 'attendance', label: 'Attendance', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
     { key: 'coursePlan', label: 'Course Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
-    
+    { key: 'classTeacher', label: 'Class Teacher', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
   ]
 
   const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
@@ -67,6 +68,10 @@ function Academics() {
       ...(canEditTimetable ? [{ key: 'sectionView', label: 'Section View' }] : []),
       { key: 'facultyView', label: 'Faculty View' },
       ...(canEditTimetable ? [{ key: 'ttView', label: 'TT View' }] : []),
+    ],
+    classTeacher: [
+      { key: 'assign', label: 'Assign' },
+      { key: 'view', label: 'View' },
     ],
   }
 
@@ -104,6 +109,10 @@ function Academics() {
       if (activeTab === 'sectionView' && canEditTimetable) return <TimeTableEntry />
       if (activeTab === 'facultyView') return <FacultyTimeTableView />
       if (activeTab === 'ttView' && canEditTimetable) return <TTView />
+    }
+    if (activeItem === 'classTeacher') {
+      if (activeTab === 'assign') return <ClassTeacherEntry />
+      if (activeTab === 'view') return <ClassTeacherView />
     }
     return null
   }
