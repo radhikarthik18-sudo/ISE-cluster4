@@ -9,7 +9,7 @@
 
 function InstituteHeader({ title, semester, academic, term }) {
   return (
-    <div className="border-b-2 border-slate-800 print:break-inside-avoid">
+    <div className="border-b-2 border-slate-800 print:break-inside-avoid font-sans">
       <div className="flex items-center justify-between p-3 gap-3">
         <img
           src="/logos/bmsit-logo.jpeg"
@@ -25,7 +25,7 @@ function InstituteHeader({ title, semester, academic, term }) {
           </div>
           <div className="text-[10px]">(An Autonomous Institution affiliated to VTU, Belagavi)</div>
           <div className="text-[10px]">Yelahanka, Bengaluru-560119</div>
-          {title && <div className="text-blue-700 font-semibold mt-1">{title}</div>}
+          {title && <div className="font-semibold mt-1" style={{ color: '#FF0000' }}>{title}</div>}
           {(semester || academic || term) && (
             <div className="text-[11px] font-medium text-slate-700 mt-0.5">
               {semester && `Semester: ${semester}`}

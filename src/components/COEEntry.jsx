@@ -24,6 +24,7 @@ const emptyHeader = {
   Vision: 'To emerge as one of the finest technical institutions of higher learning, to develop engineering professionals who are technically competent, ethical and environment friendly for betterment of the society.',
   Mission: 'Accomplish stimulating learning environment through high quality academic instruction, innovation and industry-institute interface.',
   Signatories: ['COE-Coordinator', 'Controller of Examinations', 'Dean Academics', 'Principal'],
+  SemesterEndExams: '',
 }
 
 function buildAutoTitle(h) {
@@ -110,6 +111,7 @@ function COEEntry() {
           Mission: doc.Mission || '',
           Signatories:
             doc.Signatories && doc.Signatories.length ? doc.Signatories : emptyHeader.Signatories,
+          SemesterEndExams: doc.SemesterEndExams || '',
         })
         setEntries(doc.Entries || [])
         setEvents(doc.Events || [])
@@ -195,7 +197,6 @@ function COEEntry() {
     )
   }
 
-  // --- Single date-number click popup ---
   const openDatePopup = (row, dayKey) => {
     const iso = cellToISODate(row, dayKey)
     if (!iso) return
@@ -211,7 +212,6 @@ function COEEntry() {
     setDatePopup(null)
   }
 
-  // --- Range event ---
   const openRangeForm = (rowIndex) => {
     setRangeEventFor(rowIndex)
     setRangeFrom('')
@@ -231,7 +231,6 @@ function COEEntry() {
     setRangeEventFor(null)
   }
 
-  // --- Common/preset semester events ---
   const handleCommonLabelChange = (label) => {
     setCommonLabel(label)
     const preset = COMMON_EVENTS.find((c) => c.label === label)
@@ -256,7 +255,6 @@ function COEEntry() {
     }
   }
 
-  // --- Karnataka government holidays (hardcoded list, no network needed) ---
   const fetchGovtHolidays = () => {
     if (!header.StartDate || !header.EndDate) {
       alert('Please set Start Date and End Date first')
@@ -440,6 +438,18 @@ function COEEntry() {
               value={header.Mission}
               onChange={handleHeaderChange}
               rows={2}
+              className="border px-2 py-1 rounded w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Semester End Examinations</label>
+            <input
+              type="text"
+              name="SemesterEndExams"
+              value={header.SemesterEndExams}
+              onChange={handleHeaderChange}
+              placeholder="e.g. Semester End Examinations begin from 5th January 2027"
               className="border px-2 py-1 rounded w-full"
             />
           </div>

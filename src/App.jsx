@@ -7,10 +7,11 @@ import Admission from './pages/Admission'
 import Faculty from './pages/FacultyRecord'
 import Academics from './pages/Academics'
 import Login from './pages/Login'
+import CourseFileParticularPage from './pages/CourseFileParticularPage'
 
 function App() {
   const location = useLocation()
-  const hideNavbar = location.pathname === '/login'
+  const hideNavbar = location.pathname === '/login' || location.pathname.startsWith('/course-file/')
 
   return (
     <div>
@@ -38,6 +39,7 @@ function App() {
         <Route path="/student/admission" element={<ProtectedRoute><Admission /></ProtectedRoute>} />
         <Route path="/faculty/records" element={<ProtectedRoute><Faculty /></ProtectedRoute>} />
         <Route path="/academics" element={<ProtectedRoute><Academics /></ProtectedRoute>} />
+        <Route path="/course-file/:courseFileId/particular/:slug" element={<ProtectedRoute><CourseFileParticularPage /></ProtectedRoute>} />     
       </Routes>
     </div>
   )

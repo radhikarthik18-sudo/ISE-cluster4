@@ -48,13 +48,13 @@ function COEView() {
   const monthGroups = doc ? groupByMonth(doc.Entries || []) : []
 
   return (
-    <div className="w-full font-mono">
+    <div className="w-full">
       <div className="mb-4 flex items-center gap-3 print:hidden">
         <label className="text-sm font-medium">Select Calendar:</label>
         <select
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
-          className="border px-2 py-1 rounded"
+          className="border border-black px-2 py-1 rounded"
         >
           <option value="">-- Select --</option>
           {docs.map((d) => (
@@ -79,23 +79,23 @@ function COEView() {
       )}
 
       {doc && (
-        <div className="border-2 border-slate-800 bg-white" id="coe-print-area">
+        <div className="border-2 border-black border-slate-800 bg-white text-xs font-sans" id="coe-print-area">
           <InstituteHeader title={doc.Title} semester={doc.Semester} academic={doc.AcademicYear} term={doc.Term}/>
 
-          <div className="flex border-b border-slate-300">
+          <div className="flex border-black border-b border-slate-300">
             <div className="bg-green-700 text-white font-semibold px-2 py-1 w-40 shrink-0 flex items-center">
               VISION OF THE DEPARTMENT
             </div>
             <div className="px-2 py-1 flex-1 bg-green-50 flex items-center">{doc.Vision}</div>
           </div>
-          <div className="flex border-b-2 border-slate-800">
+          <div className="flex border-black border-b-2 border-slate-800">
             <div className="bg-orange-600 text-white font-semibold px-2 py-1 w-40 shrink-0 flex items-center">
               MISSION OF THE DEPARTMENT
             </div>
             <div className="px-2 py-1 flex-1 bg-orange-50 flex items-center">{doc.Mission}</div>
           </div>
 
-          <table className="w-full border-collapse table-fixed text-xs">
+          <table className="w-full border-black border-collapse table-fixed text-xs">
             <colgroup>
               <col className="w-10" />
               <col className="w-10" />
@@ -110,14 +110,14 @@ function COEView() {
               <col />
             </colgroup>
             <thead>
-              <tr className="bg-slate-800 text-white text-xs">
-                <th className="border px-1 py-1">Month</th>
-                <th className="border px-1 py-1">Week</th>
+              <tr className="bg-slate-800 text-white text-sm">
+                <th className="border border-black px-1 py-1">Month</th>
+                <th className="border border-black px-1 py-1">Week</th>
                 {DAY_KEYS.map((d) => (
-                  <th key={d} className="border px-1 py-1">{d}</th>
+                  <th key={d} className="border border-black px-1 py-1">{d}</th>
                 ))}
-                <th className="border px-1 py-1 text-xs">Working Days</th>
-                <th className="border px-1 py-1">Events</th>
+                <th className="border border-black px-1 py-1 text-xs">WD</th>
+                <th className="border border-black px-1 py-1" style={{ backgroundColor: '#FF0066' }}>Events</th>
               </tr>
             </thead>
             <tbody>
@@ -131,13 +131,13 @@ function COEView() {
                       {ri === 0 && (
                         <td
                           rowSpan={group.rows.length}
-                          className="border px-1 py-1 align-middle font-semibold text-center bg-slate-100"
+                          className="border border-black px-1 py-1 align-middle font-semibold text-center bg-slate-100"
                           style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                         >
                           {group.Month}
                         </td>
                       )}
-                      <td className="border px-1 py-1 text-center">{row.Week}</td>
+                      <td className="border border-black px-1 py-1 text-center">{row.Week}</td>
 
                       {DAY_KEYS.map((dayKey) => {
                         const iso = cellToISODate(row, dayKey)
@@ -146,7 +146,7 @@ function COEView() {
                         return (
                           <td
                             key={dayKey}
-                            className={`border px-1 py-1 text-center ${cellColor ? 'text-white font-semibold' : ''}`}
+                            className={`border border-black px-1 py-1 text-center ${cellColor ? 'text-white font-semibold' : ''}`}
                             style={{ backgroundColor: cellColor || undefined }}
                           >
                             {row[dayKey]}
@@ -154,21 +154,23 @@ function COEView() {
                         )
                       })}
 
-                      <td className="border px-1 py-1 text-center text-xs">
+                      <td className="border border-black px-1 py-1 text-center text-xs">
                         {computeWorkingDays(row, events)}
                       </td>
-                      <td className="border px-1 py-1">
-                        <div className="flex flex-wrap gap-1 ">
-                          {rowEventGroups.map((g, ggi) => (
-                            <span
+                      <td className="border border-black p-0 align-top">
+                        {rowEventGroups.length === 0 ? (
+                          <div className="px-2 py-1">&nbsp;</div>
+                        ) : (
+                          rowEventGroups.map((g, ggi) => (
+                            <div
                               key={ggi}
                               style={{ backgroundColor: g.Color }}
-                              className="text-white px-2 py-0.5 rounded text-xs"
+                              className="text-white text-xs px-2 py-1 border-b border-black last:border-b-0"
                             >
                               {formatEventLabel(g)}
-                            </span>
-                          ))}
-                        </div>
+                            </div>
+                          ))
+                        )}
                       </td>
                     </tr>
                   )
@@ -176,8 +178,15 @@ function COEView() {
               )}
             </tbody>
           </table>
-
-          <div className="p-2 border-t-2 border-slate-800 text-xs italic bg-blue-50">
+          {doc.SemesterEndExams && (
+            <div
+              className="px-3 py-2 text-white font-semibold text-center text-sm"
+              style={{ backgroundColor: '#A086E2' }}
+            >
+              {doc.SemesterEndExams}
+            </div>
+          )}
+          <div className="p-2 border-t-2 border-black border-slate-800 text-xs italic">
             Variations in dates of events if any for valid reasons will be notified by the concerned
           </div>
           <div className="flex justify-between p-4 flex-wrap gap-2">

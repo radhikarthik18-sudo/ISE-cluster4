@@ -18,6 +18,11 @@ import FacultyTimeTableView from '../components/FacultyTimeTableView'
 import TTView from '../components/TTView'
 import ClassTeacherEntry from '../components/ClassTeacherEntry'
 import ClassTeacherView from '../components/ClassTeacherView'
+import IAConfigEntry from '../components/IAConfigEntry'
+import IAQuestionPaperEntry from '../components/IAQuestionPaperEntry'
+import IAUpload from '../components/IAUpload'
+import IAView from '../components/IAView'
+import CourseFile from '../components/CourseFile'
 
 function Academics() {
   const [activeItem, setActiveItem] = useState('courses')
@@ -35,7 +40,9 @@ function Academics() {
     { key: 'lessonPlan', label: 'Lesson Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
     { key: 'attendance', label: 'Attendance', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
     { key: 'coursePlan', label: 'Course Plan', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator'] },
+    { key: 'ia', label: 'Internal Assesment', allowedRoles: ['Admin', 'HOD', 'Faculty', 'ChiefCourseCoordinator']},
     { key: 'classTeacher', label: 'Class Teacher', allowedRoles: ['Admin', 'HOD', 'AcademicCoordinator'] },
+    { key: 'courseFile', label:'Course File', allowedRoles: ['Admin','HOD', 'Faculty', 'ChiefCourseCoordinator']},
   ]
 
   const sidebarItems = allSidebarItems.filter((item) => hasAnyRole(item.allowedRoles))
@@ -73,6 +80,15 @@ function Academics() {
       { key: 'assign', label: 'Assign' },
       { key: 'view', label: 'View' },
     ],
+    ia: [
+      { key: 'iaconfig', label: 'Config'},
+      { key: 'iaquespaper', label: 'IA QP'},
+      { key: 'iaupload', label:'IA Upload'},
+      { key: 'iaview', label: 'IA View'},
+    ],
+    courseFile: [
+      {key: 'particulars', label: 'Particulars'},
+    ]
   }
 
   const handleSidebarSelect = (key) => {
@@ -82,6 +98,9 @@ function Academics() {
   }
 
   const renderContent = () => {
+    if (activeItem === 'courseFile'){
+      if (activeTab === 'particulars') return <CourseFile />
+    }
     if (activeItem === 'courses') {
       if (activeTab === 'courseList') return <CourseListPage />
       if (activeTab === 'courseStudentMap') return <CourseStudentMap />
@@ -113,6 +132,12 @@ function Academics() {
     if (activeItem === 'classTeacher') {
       if (activeTab === 'assign') return <ClassTeacherEntry />
       if (activeTab === 'view') return <ClassTeacherView />
+    }
+    if (activeItem === 'ia'){
+      if (activeItem === 'iaconfig') return <IAConfigEntry />
+      if (activeItem === 'iaquespaper') return <IAQuestionPaperEntry />
+      if (activeItem === 'iaupload') return <IAUpload />
+      if (activeItem === 'iaview') return <IAView />
     }
     return null
   }

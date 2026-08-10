@@ -3,33 +3,28 @@
 export const DAY_KEYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export const EVENT_COLORS = [
-  { name: 'Red', hex: '#d9534f' },
-  { name: 'Crimson', hex: '#c0392b' },
-  { name: 'Coral', hex: '#e0705f' },
-  { name: 'Orange', hex: '#e0904f' },
-  { name: 'Gold', hex: '#b8860b' },
-  { name: 'Tan', hex: '#b39a5f' },
-  { name: 'Olive', hex: '#7c9a3f' },
-  { name: 'Green', hex: '#4f8a5f' },
-  { name: 'Teal', hex: '#3f8f7f' },
-  { name: 'Cyan', hex: '#3fa6a6' },
-  { name: 'Sky', hex: '#4a90d9' },
-  { name: 'Blue', hex: '#6fa2d8' },
-  { name: 'Indigo', hex: '#6a5fc0' },
-  { name: 'Purple', hex: '#8e5fc0' },
-  { name: 'Lavender', hex: '#b8a3dd' },
-  { name: 'Magenta', hex: '#c05fa0' },
-  { name: 'Pink', hex: '#e08aa8' },
-  { name: 'Rose', hex: '#d46a86' },
-  { name: 'Brown', hex: '#8a5a3f' },
-  { name: 'Slate', hex: '#64748b' },
+  { name: 'Soft Red', hex: '#e07a7a' },
+  { name: 'Coral', hex: '#e0967a' },
+  { name: 'Peach', hex: '#e8b06a' },
+  { name: 'Gold', hex: '#c9a86a' },
+  { name: 'Olive', hex: '#a3ad6e' },
+  { name: 'Sage Green', hex: '#7fa87f' },
+  { name: 'Forest', hex: '#5c9068' },
+  { name: 'Teal', hex: '#6ba89a' },
+  { name: 'Sky Blue', hex: '#7ba3c9' },
+  { name: 'Steel Blue', hex: '#6f8fb0' },
+  { name: 'Slate Blue', hex: '#7d84b8' },
+  { name: 'Lavender', hex: '#9d8fc9' },
+  { name: 'Plum', hex: '#a37fb0' },
+  { name: 'Mauve', hex: '#b591a3' },
+  { name: 'Dusty Rose', hex: '#c98fa0' },
+  { name: 'Warm Grey', hex: '#9a9488' },
+  { name: 'Slate', hex: '#7d8a99' },
+  { name: 'Brown', hex: '#a3826a' },
 ]
 
-// Soft red used for auto-marked holidays (Sundays, 1st & 3rd Saturdays)
-export const HOLIDAY_COLOR = '#db0b04'
-
-// Solid red used for fetched government holidays (same tone as the "Red" swatch)
-export const GOVT_HOLIDAY_COLOR = '#db0b04'
+export const HOLIDAY_COLOR = '#FF0000'
+export const GOVT_HOLIDAY_COLOR = '#FF0000'
 
 // A Saturday's "occurrence number" within its month can be derived
 // from the date number alone: occurrence = ceil(dateNumber / 7).
