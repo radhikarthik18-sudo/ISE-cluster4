@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import { slugify } from '../utils/slugify'
-
+import COEView from './COEView'
 function CourseFile() {
   const [courses, setCourses] = useState([])
   const [selectedCourseId, setSelectedCourseId] = useState('')
@@ -22,7 +22,10 @@ function CourseFile() {
   const [popupDetails, setPopupDetails] = useState('')
 
   const authHeaders = { Authorization: `Bearer ${localStorage.getItem('token')}` }
-
+  // These particulars already have a dedicated feature elsewhere in the app
+  // (Department COE, Course List's syllabus upload) — no placeholder-page link needed.
+  const NO_LINK_PARTICULARS = ['Calendar of Events', 'Syllabus']
+  const [showCoeModal, setShowCoeModal] = useState(false)
   useEffect(() => {
     fetch(`${API_URL}/api/courses`, { headers: authHeaders })
       .then((res) => res.json())
@@ -276,13 +279,17 @@ function CourseFile() {
                   <tr key={p.SlNo} className="border-b hover:bg-blue-50">
                     <td className="px-3 py-2">{p.SlNo}</td>
                     <td className="px-3 py-2">
-                      <button
-                        onClick={() => openParticularPage(p)}
-                        title="View this particular's PDF in a new tab"
-                        className="text-blue-600 hover:underline text-left"
-                      >
-                        {p.Name}
-                      </button>
+                      {NO_LINK_PARTICULARS.includes(p.Name) ? (
+                        <span>{p.Name}</span>
+                      ) : (
+                        <button
+                          onClick={() => openParticularPage(p)}
+                          title="Open this particular's page in a new tab"
+                          className="text-blue-600 hover:underline text-left"
+                        >
+                          {p.Name}
+                        </button>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <button
@@ -296,18 +303,28 @@ function CourseFile() {
                       </button>
                     </td>
                     <td className="px-3 py-2 text-center">
-                      <button
-                        onClick={() =>
-                          downloadPdf(
-                            `${API_URL}/api/course-file/${courseFile._id}/particular/${p.SlNo}/pdf`,
-                            `${courseFile.CourseCode}_${p.SlNo}.pdf`
-                          )
-                        }
-                        title="Download this particular as PDF"
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        📄
-                      </button>
+                      {p.Name === 'Calendar of Events' ? (
+                        <button
+                          onClick={() => setShowCoeModal(true)}
+                          title="Select and print a saved Calendar of Events"
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          📄
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            downloadPdf(
+                              `${API_URL}/api/course-file/${courseFile._id}/particular/${p.SlNo}/pdf`,
+                              `${courseFile.CourseCode}_${p.SlNo}.pdf`
+                            )
+                          }
+                          title="Download this particular as PDF"
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          📄
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -358,6 +375,25 @@ function CourseFile() {
                 Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showCoeModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-6"
+          onClick={() => setShowCoeModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-lg p-5 w-full max-w-5xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold">Print Calendar of Events</h4>
+              <button onClick={() => setShowCoeModal(false)} className="text-slate-400 hover:text-slate-700 text-xl leading-none">
+                ×
+              </button>
+            </div>
+            <COEView />
           </div>
         </div>
       )}
