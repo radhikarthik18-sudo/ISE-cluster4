@@ -81,7 +81,6 @@ function COEView() {
       {doc && (
         <div className="border-2 border-black border-slate-800 bg-white text-xs font-sans" id="coe-print-area">
           <InstituteHeader title={doc.Title} semester={doc.Semester} academic={doc.AcademicYear} term={doc.Term}/>
-
           <div className="flex border-black border-b border-slate-300">
             <div className="bg-green-700 text-white font-semibold px-2 py-1 w-40 shrink-0 flex items-center">
               VISION OF THE DEPARTMENT

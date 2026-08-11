@@ -5,12 +5,13 @@
 // Drop the actual logo image files into your app's /public/logos/ folder as:
 //   public/logos/bmsit-logo.png
 //   public/logos/vtu-logo.png
+//   public/logos/College Name.png
 // If a logo file is missing, it just hides itself instead of showing a broken image icon.
 
-function InstituteHeader({ title, semester, academic, term }) {
+function InstituteHeader({ title, department = 'Department of Computer Science and Engineering', semester, academic, term }) {
   return (
-    <div className="border-b-2 border-slate-800 print:break-inside-avoid font-sans">
-      <div className="flex items-center justify-between p-3 gap-3">
+    <div className="border-b-2 border-slate-800 print:break-inside-avoid">
+      <div className="flex items-center justify-between p-3">
         <img
           src="/logos/bmsit-logo.jpeg"
           alt="BMSIT Logo"
@@ -19,23 +20,14 @@ function InstituteHeader({ title, semester, academic, term }) {
             e.currentTarget.style.visibility = 'hidden'
           }}
         />
-        <div className="flex-1 text-center">
-          <div className="text-red-600 font-bold text-base leading-tight">
-            BMS INSTITUTE OF TECHNOLOGY &amp; MANAGEMENT
-          </div>
-          <div className="text-[10px]">(An Autonomous Institution affiliated to VTU, Belagavi)</div>
-          <div className="text-[10px]">Yelahanka, Bengaluru-560119</div>
-          {title && <div className="font-semibold mt-1" style={{ color: '#FF0000' }}>{title}</div>}
-          {(semester || academic || term) && (
-            <div className="text-[11px] font-medium text-slate-700 mt-0.5">
-              {semester && `Semester: ${semester}`}
-              {semester && (academic || term) && ' | '}
-              {academic && `Academic Year: ${academic}`}
-              {academic && term && ' | '}
-              {term && `Term: ${term}`}
-            </div>
-          )}
-        </div>
+        <img
+          src="/logos/College Name.png"
+          alt="BMS Institute of Technology & Management"
+          className="flex-1 h-20 object-contain mx-4"
+          onError={(e) => {
+            e.currentTarget.style.visibility = 'hidden'
+          }}
+        />
         <img
           src="/logos/vtu-logo.jpeg"
           alt="VTU Logo"
@@ -44,6 +36,17 @@ function InstituteHeader({ title, semester, academic, term }) {
             e.currentTarget.style.visibility = 'hidden'
           }}
         />
+      </div>
+
+      <div className="text-center pb-2" style={{ fontFamily: 'Times New Roman, Times, serif' }}>
+        <p className="font-bold text-base" style={{ color: '#FF0000' }}>
+          {department}
+        </p>
+        {title && (
+          <p className="font-semibold text-sm mt-0.5" style={{ color: '#FF0000' }}>
+            {title} of B.E. {semester} Semester {academic} ({term})
+          </p>
+        )}
       </div>
     </div>
   )

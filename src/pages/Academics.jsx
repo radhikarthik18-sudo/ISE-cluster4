@@ -23,6 +23,8 @@ import IAQuestionPaperEntry from '../components/IAQuestionPaperEntry'
 import IAUpload from '../components/IAUpload'
 import IAView from '../components/IAView'
 import CourseFile from '../components/CourseFile'
+import COEUpload from '../components/COEUpload'
+
 
 function Academics() {
   const [activeItem, setActiveItem] = useState('courses')
@@ -70,6 +72,7 @@ function Academics() {
     departmentCOE: [
       { key: 'entry', label: 'Entry' },
       { key: 'view', label: 'View' },
+      { key: 'upload', label: 'Upload'},
     ],
     timetable: [
       ...(canEditTimetable ? [{ key: 'sectionView', label: 'Section View' }] : []),
@@ -123,6 +126,7 @@ function Academics() {
     if (activeItem === 'departmentCOE') {
       if (activeTab === 'entry') return <COEEntry />
       if (activeTab === 'view') return <COEView />
+      if (activeTab === 'upload') return <COEUpload /> 
     }
     if (activeItem === 'timetable') {
       if (activeTab === 'sectionView' && canEditTimetable) return <TimeTableEntry />

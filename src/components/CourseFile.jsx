@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
 import { slugify } from '../utils/slugify'
-import COEView from './COEView'
+
 function CourseFile() {
   const [courses, setCourses] = useState([])
   const [selectedCourseId, setSelectedCourseId] = useState('')
@@ -26,6 +26,8 @@ function CourseFile() {
   // (Department COE, Course List's syllabus upload) — no placeholder-page link needed.
   const NO_LINK_PARTICULARS = ['Calendar of Events', 'Syllabus']
   const [showCoeModal, setShowCoeModal] = useState(false)
+  const [coeDocs, setCoeDocs] = useState([])
+  const [coeSelectId, setCoeSelectId] = useState('')
   useEffect(() => {
     fetch(`${API_URL}/api/courses`, { headers: authHeaders })
       .then((res) => res.json())
@@ -103,7 +105,35 @@ function CourseFile() {
     }
     setCourseFile(data)
   }
+  const openCoeModal = () => {
+    setCoeSelectId('')
+    setShowCoeModal(true)
+    fetch(`${API_URL}/api/coe`)
+      .then((res) => res.json())
+      .then(setCoeDocs)
+      .catch(() => setCoeDocs([]))
+  }
 
+  const printSignedCoe = async () => {
+    if (!coeSelectId) return alert('Select a calendar first')
+
+    const newTab = window.open('', '_blank') // opened synchronously so browsers don't block it
+    try {
+      const res = await fetch(`${API_URL}/api/coe/${coeSelectId}/signed-pdf`)
+      if (!res.ok) {
+        newTab.close()
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'No signed copy uploaded for this calendar yet — upload one in Department COE > Upload first.')
+        return
+      }
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      newTab.location.href = blobUrl
+    } catch (err) {
+      newTab.close()
+      alert('Failed to load signed copy')
+    }
+  }
   const handleHeaderChange = (e) => {
     const { name, value } = e.target
     setHeaderForm((prev) => ({ ...prev, [name]: value }))
@@ -305,7 +335,7 @@ function CourseFile() {
                     <td className="px-3 py-2 text-center">
                       {p.Name === 'Calendar of Events' ? (
                         <button
-                          onClick={() => setShowCoeModal(true)}
+                          onClick={openCoeModal}
                           title="Select and print a saved Calendar of Events"
                           className="text-red-600 hover:text-red-800"
                         >
@@ -383,17 +413,36 @@ function CourseFile() {
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-6"
           onClick={() => setShowCoeModal(false)}
         >
-          <div
-            className="bg-white rounded-lg shadow-lg p-5 w-full max-w-5xl max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-white rounded-lg shadow-lg p-5 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold">Print Calendar of Events</h4>
               <button onClick={() => setShowCoeModal(false)} className="text-slate-400 hover:text-slate-700 text-xl leading-none">
                 ×
               </button>
             </div>
-            <COEView />
+            <label className="block text-sm font-medium mb-1 text-gray-700">Select Calendar</label>
+            <select
+              value={coeSelectId}
+              onChange={(e) => setCoeSelectId(e.target.value)}
+              className="border px-2 py-1 rounded w-full mb-4"
+            >
+              <option value="">-- Select --</option>
+              {coeDocs.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {d.Title || 'Untitled'} ({d.Semester}, {d.AcademicYear} {d.Term})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={printSignedCoe}
+              disabled={!coeSelectId}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 w-full"
+            >
+              View / Print Signed Copy
+            </button>
+            <p className="text-xs text-slate-400 mt-2">
+              Opens the uploaded signed PDF in a new tab — use the browser's print option there.
+            </p>
           </div>
         </div>
       )}
